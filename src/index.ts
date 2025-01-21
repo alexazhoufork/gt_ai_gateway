@@ -5,9 +5,9 @@ const app = new Hono()
 
 
 app.get('/', (c) => {
-  return c.text('Hello, welcome to serverless ai service!')
+  return c.text('Hello, welcome to serverless ai gateway!')
 })
 
-app.get('/v1/chat/completions', chatCompletions);
+app.post('/v1/chat/completions', chatCompletions);
 
 export default app
