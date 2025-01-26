@@ -16,7 +16,7 @@ async function chatCompletions(c: Context) {
     let user:User|null = await userService.getUser(authToken!);
     console.log("user:", user);
 
-    //获取请求模型
+    //解析请求
     let bodyDict = JSON.parse(body);
     console.log("bodyDict:", bodyDict, typeof bodyDict);
 

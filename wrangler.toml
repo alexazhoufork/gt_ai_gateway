@@ -2,7 +2,7 @@ name = "serverless_ai_gateway"
 main = "src/index.ts"
 compatibility_date = "2025-01-19"
 
-# compatibility_flags = [ "nodejs_compat" ]
+compatibility_flags = [ "nodejs_compat" ]
 
 # [vars]
 # MY_VAR = "my-variable"
@@ -17,8 +17,8 @@ compatibility_date = "2025-01-19"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "test-sutando"
-database_id = "18a3d248-e4c8-481b-8f1d-2bff94a8b356"
+database_name = "serverless_ai_gateway"
+database_id = "d49ccfb6-84db-4836-80e4-8dd82f7dd029"
 
 # [ai]
 # binding = "AI"

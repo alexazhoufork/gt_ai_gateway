@@ -6,12 +6,13 @@
   },
   "dependencies": {
     "@fortaine/fetch-event-source": "^3.0.6",
-    "hono": "^4.6.17",
-    "knex-cloudflare-d1": "^0.1.1",
-    "sutando": "^1.7.0"
+    "@prisma/adapter-d1": "^6.2.1",
+    "@prisma/client": "^6.2.1",
+    "hono": "^4.6.17"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250109.0",
+    "prisma": "^6.2.1",
     "wrangler": "^3.101.0"
   }
 }
