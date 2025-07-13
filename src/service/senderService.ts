@@ -19,7 +19,7 @@ async function sendRequest (c:Context, user:SgUser, modelConfig:SgModel, vendor:
 
     let streamResponse: boolean = true;
     let upstreamStatusCode: StatusCode | null = null;
-    let responseText: string | null = null;
+    let upstreamResponseText: string | null = null;
 
     let getResponseHeaderPromise: CustomPromise<void> = new CustomPromise();
 
@@ -59,9 +59,9 @@ async function sendRequest (c:Context, user:SgUser, modelConfig:SgModel, vendor:
                 console.log("upstream response content type: ", contentType);
 
                 if (contentType?.startsWith("text/plain") || contentType?.startsWith("application/json")) {
-                    responseText = await response.clone().text();
+                    upstreamResponseText = await response.clone().text();
                     console.log("statusCode:",response.status);
-                    console.log("responseText:",responseText);
+                    console.log("responseText:",upstreamResponseText);
                 }
 
                 console.log("fallback to json response");
@@ -70,9 +70,9 @@ async function sendRequest (c:Context, user:SgUser, modelConfig:SgModel, vendor:
             } else {
                 console.log("onOpen, but content-type not except:", response);
                 streamResponse = false;
-                responseText = await response.clone().text();
+                upstreamResponseText = await response.clone().text();
                 console.log("statusCode:",response.status);
-                console.log("responseText:",responseText);
+                console.log("responseText:",upstreamResponseText);
 
                 getResponseHeaderPromise.resolve(null);
             }
@@ -113,12 +113,12 @@ async function sendRequest (c:Context, user:SgUser, modelConfig:SgModel, vendor:
         return streamSSEResponse;
     }else{
         recordService.update(recordId, {
-            response_data:responseText
+            response_data:upstreamResponseText
         })
 
         c.status(upstreamStatusCode!);
         c.res.headers.set("Content-Type","application/json");
-        return c.text(responseText!)
+        return c.text(upstreamResponseText!)
     }
 }
 
