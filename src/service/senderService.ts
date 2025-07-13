@@ -40,17 +40,7 @@ async function sendRequest (c:Context, user:SgUser, modelConfig:SgModel, vendor:
     let upstreamReqPromise: Promise<void> | null = null;
     let streamOutputPipe: SSEStreamingApi | null = null;
 
-    let streamSSEResponse = streamSSE(c, async (stream: SSEStreamingApi) => {
-        streamOutputPipe = stream;
-        console.log("set upstreamReqPromise",upstreamReqPromise);
-        await getResponseHeaderPromise;
-        await upstreamReqPromise;
-        console.log("upstreamReqPromise finished");
-    });
-
     console.log("do fetch upstream");
-
-    //upstreamReqPromise =
     upstreamReqPromise = fetchEventSource(vendor!.url!, {
         ...requestOptions,
         async onopen(response:Response) {
@@ -111,10 +101,17 @@ async function sendRequest (c:Context, user:SgUser, modelConfig:SgModel, vendor:
         }
     });
 
-    console.log("before getResponseHeaderPromise");
+    console.log("before await getResponseHeaderPromise", getResponseHeaderPromise);
     await getResponseHeaderPromise;
-    console.log("after getResponseHeaderPromise");
+    console.log("after getResponseHeaderPromise finished", getResponseHeaderPromise);
     console.log("streamResponse:", streamResponse);
+
+    let streamSSEResponse = streamSSE(c, async (stream: SSEStreamingApi) => {
+        streamOutputPipe = stream;
+        console.log("before await upstreamReqPromise",upstreamReqPromise);
+        await upstreamReqPromise;
+        console.log("after upstreamReqPromise finished", upstreamReqPromise);
+    });
 
     if(streamResponse === true){
         return streamSSEResponse;
