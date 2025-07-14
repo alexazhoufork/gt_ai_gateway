@@ -1,5 +1,6 @@
 
 import {SgRecord} from "../model/sgRecord";
+import {SgRecordStatus} from "../constants";
 
 async function create(userId: number, modelId: number, requestData: string | null) {
     return SgRecord.query().create({
@@ -7,7 +8,7 @@ async function create(userId: number, modelId: number, requestData: string | nul
         model_id: modelId,
         request_data: requestData,
         response_data: null,
-        status: 'init',
+        status: SgRecordStatus.INIT,
     });
 }
 

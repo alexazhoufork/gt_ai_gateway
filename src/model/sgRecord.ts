@@ -1,6 +1,8 @@
 import {Model} from "sutando";
 import { inspect, InspectOptions } from 'util';
 
+import {SgRecordStatus} from "../constants";
+
 class SgRecord extends Model {
     table = 'record';
 
@@ -10,7 +12,7 @@ class SgRecord extends Model {
     model_id!: number | null;
     request_data!: string | null;
     response_data!: string | null;
-    status!: string | null;
+    status!: SgRecordStatus | null;
 
     created_at!: Date;
     updated_at!: Date;

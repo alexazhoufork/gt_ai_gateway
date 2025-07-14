@@ -7,12 +7,14 @@ import {EventStreamContentType, fetchEventSource} from "@fortaine/fetch-event-so
 import {SgUser} from "../model/sgUser";
 import {SgVendor} from "../model/sgVendor";
 import recordService from "./recordService";
+import {SgRecordStatus} from "../constants";
 
 
 async function sendRequest (c:Context, user:SgUser, modelConfig:SgModel, vendor:SgVendor):Promise<Response>{
 
     let body: string = await c.req.text();
     const record = await recordService.create(user.id, modelConfig.id, body);
+    await recordService.update(record.id, {status: SgRecordStatus.PROCESSING});
     const recordId = record.id;
 
     console.log("sendRequest: modelConfig={}", modelConfig);
@@ -85,9 +87,7 @@ async function sendRequest (c:Context, user:SgUser, modelConfig:SgModel, vendor:
         },
         onclose() {
             // if the server closes the connection unexpectedly, retry:
-
             console.log("onClose");
-
             getResponseHeaderPromise.resolve(null);
         },
         onerror(err:Response) {
@@ -113,7 +113,8 @@ async function sendRequest (c:Context, user:SgUser, modelConfig:SgModel, vendor:
         return streamSSEResponse;
     }else{
         recordService.update(recordId, {
-            response_data:upstreamResponseText
+            response_data:upstreamResponseText,
+            status: upstreamStatusCode == 200 ? SgRecordStatus.SUCCESS:SgRecordStatus.FAILED
         })
 
         c.status(upstreamStatusCode!);
