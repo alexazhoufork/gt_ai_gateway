@@ -11,14 +11,7 @@ export interface Migration {
 
 async function initMigrationsTable() {
   const dbAdapter = ormService.dbAdapter
-  await dbAdapter.exec(`
-    CREATE TABLE IF NOT EXISTS _migrations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE,
-      version INTEGER NOT NULL,
-      applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
-    );
-  `)
+  await dbAdapter.exec('CREATE TABLE IF NOT EXISTS _migrations (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, version INTEGER NOT NULL, applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL)')
 }
 
 async function getAppliedMigrations(): Promise<Migration[]> {
@@ -50,8 +43,16 @@ async function applyMigration(migration: Migration) {
   const sqlPath = join(RESOURCE_DIR, migration.name)
   const sql = readFileSync(sqlPath, 'utf-8')
 
-  // 执行迁移 SQL
-  await dbAdapter.exec(sql)
+  // 将 SQL 按分号分割并去除空语句
+  const statements = sql
+    .split(';')
+    .map(s => s.trim())
+    .filter(s => s.length > 0)
+
+  // 逐条执行迁移 SQL
+  for (const statement of statements) {
+    await dbAdapter.exec(statement)
+  }
 
   // 记录已应用的迁移
   await dbAdapter.prepare(
@@ -85,6 +86,7 @@ async function migrate(): Promise<number> {
 }
 
 async function getCurrentVersion(): Promise<number> {
+  await initMigrationsTable()
   const dbAdapter = ormService.dbAdapter
   const result = await dbAdapter.prepare('SELECT MAX(version) as max_version FROM _migrations').first()
   return result?.max_version || 0

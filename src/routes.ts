@@ -26,8 +26,8 @@ app.use('*', dbMiddleware)
 app.get('/', SystemController.welcome)
 
 // Migration
-app.post('/migrate', MigrateController.migrate)
-app.get('/migrate/status', MigrateController.status)
+app.post('/migrate.json', MigrateController.migrate)
+app.get('/migrate/status.json', MigrateController.status)
 
 // Model
 app.post('/model/create.json', ModelController.createModel)
