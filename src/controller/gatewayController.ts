@@ -55,6 +55,10 @@ async function chatCompletions(c: Context) {
         return c.json({ error: 'vendor not found' }, 401);
     }
 
+    if (vendor.api_format !== ApiFormat.OPENAI) {
+        return c.json({ error: 'vendor api_format must be openai' }, 400);
+    }
+
     if (vendor?.url == null) {
         if (vendor?.type == "aliyun") {
             vendor.url = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
@@ -111,6 +115,10 @@ async function anthropicMessages(c: Context) {
 
     if (vendor == null) {
         return c.json({ error: 'vendor not found' }, 401);
+    }
+
+    if (vendor.api_format !== ApiFormat.ANTHROPIC) {
+        return c.json({ error: 'vendor api_format must be anthropic' }, 400);
     }
 
     if (vendor?.url == null) {
