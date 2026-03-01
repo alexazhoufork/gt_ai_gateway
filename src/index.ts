@@ -1,6 +1,14 @@
 import { ormService } from './service/ormService'
-import './service/resourceLoader'  // Worker 环境：注册资源文件
+import { registerFile } from './service/fileService'
+import migrate_0001 from '../resource/migrate_0001.sql'
+import migrate_0002 from '../resource/migrate_0002.sql'
 import app from './routes'
+
+// 注册资源文件
+registerFile([
+  { path: 'src/resource/migrate_0001.sql', content: migrate_0001 },
+  { path: 'src/resource/migrate_0002.sql', content: migrate_0002 },
+])
 
 // 初始化云端配置
 await ormService.init({ mode: 'cloud' })

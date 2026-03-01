@@ -1,40 +1,36 @@
-// 文件服务 - 统一本地 Node.js 和 Cloudflare Worker 环境的文件读取
+/* 文件服务 - 统一本地 Node.js 和 Cloudflare Worker 环境的文件读取 */
 
 import { ormService } from './ormService'
 
-// ============================================================
-// Worker 环境的文件注册系统
-// ============================================================
-
-// 已注册的文件内容（Worker 环境下由 resourceLoader 注册）
+/* Worker 环境的文件注册系统 */
+/* 已注册的文件内容（Worker 环境下由 resourceLoader 注册） */
 const registeredFiles: Map<string, string> = new Map()
 
-// 已注册的目录文件列表
+/* 已注册的目录文件列表 */
 const registeredDirs: Map<string, string[]> = new Map()
 
-/**
+/*
  * 注册文件内容（供 Worker 环境使用）
+ * @param files 文件列表，格式: [{ path: 'path1', content: 'content1' }, { path: 'path2', content: 'content2' }]
  */
-export function registerFile(filePath: string, content: string): void {
-  registeredFiles.set(filePath, content)
-
-  // 自动更新目录文件列表
-  const lastSlash = filePath.lastIndexOf('/')
-  if (lastSlash >= 0) {
-    const dir = filePath.substring(0, lastSlash)
-    const fileName = filePath.substring(lastSlash + 1)
-    const files = registeredDirs.get(dir) || []
-    if (!files.includes(fileName)) {
-      files.push(fileName)
-      registeredDirs.set(dir, files)
+export function registerFile(files: { path: string; content: string }[]): void {
+  for (const { path, content } of files) {
+    registeredFiles.set(path, content)
+    /* 自动更新目录文件列表 */
+    const lastSlash = path.lastIndexOf('/')
+    if (lastSlash >= 0) {
+      const dir = path.substring(0, lastSlash)
+      const fileName = path.substring(lastSlash + 1)
+      const dirFiles = registeredDirs.get(dir) || []
+      if (!dirFiles.includes(fileName)) {
+        dirFiles.push(fileName)
+        registeredDirs.set(dir, dirFiles)
+      }
     }
   }
 }
 
-// ============================================================
-// Worker 环境实现（使用已注册的文件）
-// ============================================================
-
+/* Worker 环境实现（使用已注册的文件） */
 async function readFileInWorker(filePath: string): Promise<string> {
   const content = registeredFiles.get(filePath)
   if (content !== undefined) {
@@ -48,10 +44,7 @@ async function listFilesInWorker(dirPath: string, pattern: string): Promise<stri
   return filterByPattern(files, pattern)
 }
 
-// ============================================================
-// Node.js 环境实现（通过 fs 模块读取文件系统）
-// ============================================================
-
+/* Node.js 环境实现（通过 fs 模块读取文件系统） */
 function getProjectRoot(): string {
   const { resolve, dirname } = require('path')
   const { existsSync } = require('fs')
@@ -87,15 +80,12 @@ async function listFilesInNode(dirPath: string, pattern: string): Promise<string
   if (!existsSync(fullPath)) {
     return []
   }
-
+  
   const files: string[] = readdirSync(fullPath)
   return filterByPattern(files, pattern)
 }
 
-// ============================================================
-// 通用工具
-// ============================================================
-
+/* 通用工具 */
 function filterByPattern(files: string[], pattern: string): string[] {
   if (pattern === '*') return files
   if (pattern.startsWith('*.')) {
@@ -105,11 +95,8 @@ function filterByPattern(files: string[], pattern: string): string[] {
   return files
 }
 
-// ============================================================
-// 统一接口
-// ============================================================
-
-/**
+/* 统一接口 */
+/*
  * 读取文件内容
  * @param filePath 文件路径（相对于项目根目录，如 'src/resource/migrate_0001.sql'）
  */
@@ -120,7 +107,7 @@ export async function readFile(filePath: string): Promise<string> {
   return readFileInWorker(filePath)
 }
 
-/**
+/*
  * 列出指定目录下的所有文件
  * @param dirPath 目录路径（相对于项目根目录，如 'src/resource'）
  * @param pattern 文件匹配模式（如 '*.sql'，默认为 '*'）
