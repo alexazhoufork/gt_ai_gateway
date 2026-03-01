@@ -5,7 +5,6 @@ import * as UserController from './controller/userController'
 import * as VendorController from './controller/vendorController'
 import * as RecordController from './controller/recordController'
 import * as SystemController from './controller/systemController'
-import * as FileController from './controller/fileController'
 import { ormService } from './service/ormService'
 
 interface Env {
@@ -47,10 +46,6 @@ app.get('/record/:id', RecordController.getRecord)
 // AI
 app.post('/v1/chat/completions', chatCompletions)
 app.post('/v1/messages', anthropicMessages)
-
-// File
-app.get('/file/list', FileController.list)
-app.get('/file/read', FileController.read)
 
 export { app, Env }
 export default app
