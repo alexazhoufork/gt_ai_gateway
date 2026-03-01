@@ -1,0 +1,323 @@
+import { join } from 'path';
+import { readdirSync, readFileSync } from 'fs';
+import { execSync } from 'child_process';
+import Database from 'better-sqlite3';
+
+const args = process.argv.slice(2);
+const MIGRATION_DIR = join(process.cwd(), 'src', 'resource', 'migrate');
+const LOCAL_DB_PATH = join(process.cwd(), 'local.db');
+
+interface Migration {
+    id?: number;
+    name: string;
+    applied_at?: string;
+}
+
+// 解析命令行参数
+let command = '';
+let env = 'local'; // default
+
+for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--env' || args[i] === '-e') {
+        env = args[i + 1];
+        i++;
+    } else if (!command) {
+        command = args[i];
+    }
+}
+
+// 统一的执行 SQL 接口
+interface DBAdapter {
+    exec(sql: string): void;
+    query<T>(sql: string): T[];
+    run(sql: string, ...params: any[]): void;
+    close(): void;
+}
+
+class LocalDBAdapter implements DBAdapter {
+    private db: Database.Database;
+
+    constructor(dbPath: string) {
+        this.db = new Database(dbPath);
+    }
+
+    exec(sql: string): void {
+        const statements = sql
+            .split(';')
+            .map(s => s.trim())
+            .filter(s => s.length > 0);
+
+        // 对于 sqlite3，多条语句可能导致问题，因此尝试分拆或者使用 .exec() 完整执行
+        // better-sqlite3 推荐使用 .exec 执行包含多条语句的完整字符串
+        try {
+            this.db.exec(sql);
+        } catch (e) {
+            // 回退分拆单条执行
+            for (const statement of statements) {
+                if (statement) {
+                    this.db.exec(statement + ';');
+                }
+            }
+        }
+    }
+
+    query<T>(sql: string): T[] {
+        return this.db.prepare(sql).all() as T[];
+    }
+
+    run(sql: string, ...params: any[]): void {
+        this.db.prepare(sql).run(...params);
+    }
+
+    close(): void {
+        this.db.close();
+    }
+}
+
+class WranglerDBAdapter implements DBAdapter {
+    private target: '--local' | '--remote';
+
+    constructor(target: '--local' | '--remote') {
+        this.target = target;
+    }
+
+    private runWrangler(args: string[]): string {
+        const cmd = `npx wrangler d1 execute serverless_ai_gateway ${this.target} ${args.join(' ')}`;
+        console.log(`> ${cmd}`);
+        try {
+            const output = execSync(cmd, { encoding: 'utf-8', stdio: 'pipe' });
+            return output;
+        } catch (e: any) {
+            console.error('Wrangler command failed:', e.message);
+            if (e.stdout) console.error('stdout:', e.stdout);
+            if (e.stderr) console.error('stderr:', e.stderr);
+            throw e;
+        }
+    }
+
+    exec(sql: string): void {
+        // Escape shell payload, or better interact via file
+        // Due to the complexity of sending arbitrary SQL over the CLI via an argument:
+        // We'll use a temporary file or format it
+        // Wrangler accepts --command="SQL"
+
+        // Instead of passing huge SQL directly on CLI args which can lead to quotes issues,
+        // let's try direct --command first
+        // Note: D1 execute does not like multi-line queries via command sometimes
+        const singleLine = sql.replace(/\n/g, ' ');
+        this.runWrangler([`--command="${singleLine.replace(/"/g, '\\"')}"`]);
+    }
+
+    query<T>(sql: string): T[] {
+        // Wrangler query result format parsing is tricky via CLI
+        const output = this.runWrangler([`--json --command="${sql.replace(/"/g, '\\"')}"`]);
+        try {
+            // Output might have wrangler logs prefixed. 
+            // Best effort: extract JSON bracket bounds.
+            const match = output.match(/\[.*\]/s);
+            if (match) {
+                return JSON.parse(match[0]) as T[];
+            }
+            return [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    run(sql: string): void {
+        this.exec(sql);
+    }
+
+    close(): void {
+        // No-op
+    }
+}
+
+function getAdapter(env: string): DBAdapter {
+    if (env === 'local') {
+        return new LocalDBAdapter(LOCAL_DB_PATH);
+    } else if (env === 'worker-local') {
+        return new WranglerDBAdapter('--local');
+    } else if (env === 'worker-cloud') {
+        return new WranglerDBAdapter('--remote');
+    } else {
+        throw new Error(`Unknown env: ${env}`);
+    }
+}
+
+// 命令实现
+async function migrate(adapter: DBAdapter, env: string) {
+    console.log(`Initializing migrations table in ${env}...`);
+    adapter.exec('CREATE TABLE IF NOT EXISTS _migrations (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL)');
+
+    console.log('Fetching applied migrations...');
+    let applied: Migration[] = [];
+    try {
+        applied = adapter.query<Migration>('SELECT name FROM _migrations ORDER BY name');
+    } catch (e) {
+        console.log('Error fetching applied migrations, assuming empty.', e);
+    }
+
+    const appliedNames = new Set(applied.map(m => m.name));
+
+    console.log('Scanning available migrations in', MIGRATION_DIR);
+    let available: string[] = [];
+    try {
+        available = readdirSync(MIGRATION_DIR).filter(f => f.endsWith('.sql'));
+    } catch (e) {
+        console.warn(`Could not read migration directory: ${MIGRATION_DIR}`);
+    }
+
+    // 过滤并排序
+    const validFiles = available.filter(f => /^(\d{4})\.sql$/.test(f)).sort();
+
+    const pendingMigrations = validFiles.filter(name => !appliedNames.has(name));
+
+    console.log(`Applied: ${applied.length}, Available: ${validFiles.length}, Pending: ${pendingMigrations.length}`);
+
+    if (pendingMigrations.length === 0) {
+        console.log('Database is up to date.');
+        return;
+    }
+
+    for (const file of pendingMigrations) {
+        console.log(`\nApplying migration: ${file}...`);
+        const sqlPath = join(MIGRATION_DIR, file);
+        const sql = readFileSync(sqlPath, 'utf-8');
+
+        try {
+            if (adapter instanceof WranglerDBAdapter) {
+                // 对于 wrangler，由于 SQL 可能非常长，最好使用 --file 参数
+                // 我们利用子进程直接执行该文件
+                const cmd = `npx wrangler d1 execute serverless_ai_gateway ${env === 'worker-cloud' ? '--remote' : '--local'} --file="${sqlPath}"`;
+                console.log(`> ${cmd}`);
+                execSync(cmd, { stdio: 'inherit' });
+            } else {
+                adapter.exec(sql);
+            }
+
+            // 记录迁移
+            if (adapter instanceof WranglerDBAdapter) {
+                adapter.exec(`INSERT INTO _migrations (name) VALUES ('${file}')`);
+            } else {
+                adapter.run('INSERT INTO _migrations (name) VALUES (?)', file);
+            }
+            console.log(`✅ Successfully applied: ${file}`);
+        } catch (e) {
+            console.error(`❌ Failed to apply migration ${file}:`, e);
+            throw e;
+        }
+    }
+
+    console.log('\nAll pending migrations applied.');
+}
+
+async function status(adapter: DBAdapter) {
+    console.log('Initializing migrations table...');
+    adapter.exec('CREATE TABLE IF NOT EXISTS _migrations (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL)');
+    let applied: Migration[] = [];
+    try {
+        applied = adapter.query<Migration>('SELECT name, applied_at FROM _migrations ORDER BY name');
+    } catch (e) {
+        console.log('Error fetching applied migrations', e);
+    }
+
+    if (applied.length === 0) {
+        console.log('No migrations have been applied.');
+    } else {
+        console.log(`\nApplied migrations (${applied.length}):`);
+        applied.forEach(m => {
+            console.log(`- ${m.name} (Applied at: ${m.applied_at || 'unknown'})`);
+        });
+
+        const last = applied[applied.length - 1];
+        const version = parseInt(last.name.match(/(\d{4})\.sql$/)?.[1] || '0', 10);
+        console.log(`\nCurrent Database Version: ${version}`);
+    }
+}
+
+async function clear(adapter: DBAdapter, env: string) {
+    // 注意：这个操作很危险
+    console.warn(`\n⚠️  WARNING: You are about to CLEAR the database in environment: ${env}`);
+    console.warn(`All tables EXCEPT sqlite_schema / d1 internal tables will be DROPPED.\n`);
+
+    // 要真正交互确认可以引入 readline，这里简化为直接执行
+    let tables: any[] = [];
+    try {
+        tables = adapter.query<{ name: string }>('SELECT name FROM sqlite_master WHERE type="table" AND name NOT LIKE "sqlite_%" AND name NOT LIKE "_cf_%" AND name NOT LIKE "d1_%"');
+    } catch (e) {
+        console.error('Failed to query tables:', e);
+        return;
+    }
+
+    if (tables.length === 0) {
+        console.log('No custom tables found to drop.');
+        return;
+    }
+
+    console.log(`Found ${tables.length} tables to drop:`, tables.map(t => t.name).join(', '));
+
+    for (const table of tables) {
+        try {
+            console.log(`Dropping table: ${table.name}...`);
+            adapter.exec(`DROP TABLE IF EXISTS ${table.name}`);
+        } catch (e) {
+            console.error(`Failed to drop table ${table.name}:`, e);
+        }
+    }
+
+    console.log('\nDatabase cleared.');
+}
+
+// 主入口
+async function main() {
+    if (!command) {
+        console.error('Usage: npx tsx script/db.ts <command> [--env local|worker-local|worker-cloud]');
+        console.error('Commands: migrate, status, clear');
+        process.exit(1);
+    }
+
+    if (!['local', 'worker-local', 'worker-cloud'].includes(env)) {
+        console.error(`Invalid environment: ${env}. Must be local, worker-local, or worker-cloud.`);
+        process.exit(1);
+    }
+
+    console.log(`=== DB Automation Script ===`);
+    console.log(`Command: ${command}`);
+    console.log(`Environment: ${env}`);
+    console.log(`============================\n`);
+
+    let adapter: DBAdapter;
+    try {
+        adapter = getAdapter(env);
+    } catch (e: any) {
+        console.error('Failed to initialize database adapter:', e.message);
+        process.exit(1);
+    }
+
+    try {
+        switch (command) {
+            case 'migrate':
+                await migrate(adapter, env);
+                break;
+            case 'status':
+                await status(adapter);
+                break;
+            case 'clear':
+                await clear(adapter, env);
+                break;
+            default:
+                console.error(`Unknown command: ${command}`);
+                console.log('Available commands: migrate, status, clear');
+                process.exit(1);
+        }
+    } catch (e) {
+        console.error('\nExecution failed:');
+        console.error(e);
+        process.exit(1);
+    } finally {
+        adapter.close();
+    }
+}
+
+main();

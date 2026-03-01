@@ -4,7 +4,6 @@ import * as ModelController from './controller/modelController'
 import * as UserController from './controller/userController'
 import * as VendorController from './controller/vendorController'
 import * as RecordController from './controller/recordController'
-import * as MigrateController from './controller/migrateController'
 import * as SystemController from './controller/systemController'
 import * as FileController from './controller/fileController'
 import { ormService } from './service/ormService'
@@ -25,11 +24,6 @@ app.use('*', dbMiddleware)
 
 // System
 app.get('/', SystemController.welcome)
-
-// Migration
-app.post('/migrate.json', MigrateController.migrate)
-app.get('/migrate/status.json', MigrateController.status)
-app.get('/migrate/list.json', MigrateController.list)
 
 // Model
 app.post('/model/create.json', ModelController.createModel)
