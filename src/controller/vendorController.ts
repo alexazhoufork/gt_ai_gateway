@@ -15,13 +15,14 @@ async function getVendor(c: Context) {
 
 async function createVendor(c: Context) {
   const body = await c.req.json()
-  const { type, name, token, url } = body
+  const { type, name, token, url, api_format } = body
 
   const instance = await SgVendor.query().create({
     type,
     name,
     token,
     url,
+    api_format
   })
 
   return c.json(instance)
