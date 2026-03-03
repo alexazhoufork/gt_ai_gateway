@@ -15,3 +15,8 @@ export enum ApiFormat {
     OPENAI = "openai",
     ANTHROPIC = "anthropic",
 }
+
+export enum UserType {
+    NORMAL = "normal",
+    ADMIN = "admin",
+}

@@ -1,5 +1,6 @@
 import { Context } from "hono";
 import { SgUser } from "../model/sgUser";
+import { UserType } from "../constants";
 
 async function listUsers(c: Context) {
     const users = await SgUser.query().get();
@@ -26,17 +27,18 @@ async function getUser(c: Context) {
 async function createUser(c: Context) {
     try {
         const body = await c.req.json();
-        let { name, token } = body;
+        let { name, token, type } = body;
 
         if (token === null || token === undefined || token === "") {
             token = crypto.randomUUID();
         }
 
-        console.log("[userController] Creating user:", { name, token });
+        console.log("[userController] Creating user:", { name, token, type });
 
         const instance = await SgUser.query().create({
             name,
             token,
+            type: type || UserType.NORMAL,
         });
 
         console.log("[userController] User created successfully:", instance);

@@ -9,6 +9,11 @@ const USER_FIXTURES = {
         name: "Test User",
         token: randomUUID(),
     },
+    admin: {
+        name: "Admin User",
+        token: "admin-token-123",
+        type: "admin",
+    },
     withCustomToken: {
         name: "Test User with Custom Token",
         token: "custom-token-123",

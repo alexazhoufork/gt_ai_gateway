@@ -24,38 +24,96 @@
 
 ### 数据库表结构
 
-- `user`: 用户表（id, name, token）
+- `user`: 用户表（id, name, token, type）
 - `vendor`: 供应商表（id, type, name, token, url, api_format）
 - `model`: 模型表（id, name, vendor_id）
 - `record`: 请求记录表（id, user_id, model_id, request_data, response_data, status）
 
-### API 端点
+## API 端点
 
-#### 系统端点
-- `GET /` - 欢迎信息
+### 认证说明
 
-#### 用户管理
+系统使用 Bearer Token 进行身份认证。所有 API 请求需要在请求头中携带：
+
+```
+Authorization: Bearer <token>
+```
+
+#### 用户类型
+
+系统支持两种用户类型：
+
+| 用户类型 | 说明 | 权限 |
+|---------|------|------|
+| `normal` | 普通用户 | 可访问 LLM API 端点 |
+| `admin` | 管理员 | 可访问所有 API 端点 |
+
+#### 需要管理员权限的端点
+
+以下端点需要管理员权限，普通用户访问将返回 403 错误：
+
+**用户管理**
 - `POST /user/create.json` - 创建用户
 - `GET /user/list.json` - 获取用户列表
 - `GET /user/:id` - 获取用户详情
 
-#### 供应商管理
+**供应商管理**
 - `POST /vendor/create.json` - 创建供应商
 - `GET /vendor/list.json` - 获取供应商列表
 - `GET /vendor/:id` - 获取供应商详情
+- `PUT /vendor/:id` - 更新供应商
 
-#### 模型管理
+**模型管理**
 - `POST /model/create.json` - 创建模型
 - `GET /model/list.json` - 获取模型列表
+- `GET /model/:id` - 获取模型详情
 
-#### 请求记录
+**请求记录**
 - `GET /record/list.json` - 获取请求记录列表
 - `GET /record/latest.json` - 获取最新的请求记录
 - `GET /record/:id` - 获取请求记录详情
 
-#### AI 服务端点
+#### 无需特殊权限的端点
+
+以下端点所有用户（包括普通用户）均可访问：
+
+**LLM API**
 - `POST /v1/chat/completions` - OpenAI 格式聊天请求
 - `POST /v1/messages` - Anthropic 格式消息请求
+
+**系统 API（无需认证）**
+- `GET /` - 欢迎信息
+- `GET /status.json` - 系统状态（返回统计信息）
+
+#### 错误响应
+
+- `401 Unauthorized` - 缺少 Authorization header 或 token 无效
+- `403 Forbidden` - 用户无权限访问该资源（需要管理员权限）
+
+#### 创建管理员用户
+
+通过数据库直接插入管理员用户：
+
+```sql
+INSERT INTO user (name, token, type, created_at, updated_at)
+VALUES ('Admin', 'your-admin-token', 'admin', datetime('now'), datetime('now'));
+```
+
+### 系统端点
+
+**系统 API**
+- `GET /` - 欢迎信息（无需认证）
+- `GET /status.json` - 系统状态（需要管理员权限）
+
+**LLM API（需要用户 Token）**
+- `POST /v1/chat/completions` - OpenAI 格式聊天请求
+- `POST /v1/messages` - Anthropic 格式消息请求
+
+**其他 API（需要管理员权限）**
+- 用户管理：`POST /user/create.json`、`GET /user/list.json`、`GET /user/:id`
+- 供应商管理：`POST /vendor/create.json`、`GET /vendor/list.json`、`GET /vendor/:id`、`PUT /vendor/:id`
+- 模型管理：`POST /model/create.json`、`GET /model/list.json`、`GET /model/:id`
+- 请求记录：`GET /record/list.json`、`GET /record/latest.json`、`GET /record/:id`
 
 ## 使用方式
 
@@ -148,6 +206,8 @@ TEST_VERBOSE=false
 │   │   ├── modelController.ts
 │   │   ├── recordController.ts
 │   │   └── systemController.ts
+│   ├── middleware/         # 中间件
+│   │   └── authMiddleware.ts
 │   ├── model/              # 数据模型
 │   │   ├── sgUser.ts
 │   │   ├── sgVendor.ts
@@ -170,6 +230,7 @@ TEST_VERBOSE=false
 │   ├── helpers/            # 测试辅助函数
 │   ├── fixtures/           # 测试数据
 │   ├── api/                # API 端点测试
+│   │   └── auth/           # 认证鉴权测试
 │   └── integration/         # 集成测试
 ├── resource/migrate/      # 数据库迁移文件
 ├── script/               # 工具脚本
@@ -198,6 +259,7 @@ TEST_VERBOSE=false
 - `migrate_0001.sql`: 初始表结构
 - `migrate_0002.sql`: 字段更新
 - `migrate_0003.sql`: 后续更新
+- `migrate_0004.sql`: 添加用户类型字段（支持 normal/admin 用户类型）
 
 ## 数据库管理工具
 
