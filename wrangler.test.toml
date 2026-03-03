@@ -1,0 +1,14 @@
+name = "serverless_ai_gateway_test"
+main = "src/index.ts"
+compatibility_date = "2025-01-19"
+
+compatibility_flags = [ "nodejs_compat", "no_handle_cross_request_promise_resolution" ]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "serverless_ai_gateway_test"
+database_id = "test-database-id"
+
+[observability]
+enabled = true
+head_sampling_rate = 1
