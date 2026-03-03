@@ -1,4 +1,5 @@
 import { createServer, IncomingMessage, ServerResponse } from "http";
+import net from "net";
 
 const DEFAULT_MOCK_PORT = 9999;
 
@@ -9,6 +10,24 @@ let isRunning = false;
  * Store received headers for testing
  */
 let receivedHeaders: Record<string, string> = {};
+
+/**
+ * Check if a port is in use
+ */
+function isPortInUse(port: number): Promise<boolean> {
+    return new Promise((resolve) => {
+        const tester = net.createServer()
+            .once("error", () => {
+                resolve(true);
+            })
+            .once("listening", () => {
+                tester.once("close", () => {
+                    resolve(false);
+                }).close();
+            })
+            .listen(port);
+    });
+}
 
 /**
  * Mock AI Server
@@ -24,19 +43,35 @@ async function startMockServer(port: number = DEFAULT_MOCK_PORT): Promise<any> {
         return null;
     }
 
-    return new Promise((resolve) => {
+    // Check if port is already in use
+    const portInUse = await isPortInUse(port);
+    if (portInUse) {
+        throw new Error(
+            `Port ${port} is already in use. Please stop any existing mock server or process using this port.`,
+        );
+    }
+
+    return new Promise((resolve, reject) => {
         server = createServer((req: IncomingMessage, res: ServerResponse) => {
             handleRequest(req, res);
+        });
+
+        server.on("error", (err) => {
+            if ((err as any).code === "EADDRINUSE") {
+                reject(
+                    new Error(
+                        `Port ${port} is already in use. Please stop any existing mock server or process using this port.`,
+                    ),
+                );
+            } else {
+                reject(err);
+            }
         });
 
         server.listen(port, () => {
             isRunning = true;
             console.log(`Mock AI server listening on port ${port}`);
             resolve(server);
-        });
-
-        server.on("error", (err) => {
-            console.error("Mock server error:", err);
         });
     });
 }

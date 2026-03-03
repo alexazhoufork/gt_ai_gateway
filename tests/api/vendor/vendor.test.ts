@@ -8,10 +8,12 @@ import testHelpers from "../../testHelpers";
  */
 
 let createdVendorId: number;
+let adminToken: string;
 
 describe("Vendor API (Positive)", () => {
     beforeAll(async () => {
         await testHelpers.truncateDatabase();
+        adminToken = await testHelpers.setupAdminUser();
     });
     describe("POST /vendor/create.json", () => {
         it("should create an OpenAI vendor", async () => {
@@ -19,6 +21,7 @@ describe("Vendor API (Positive)", () => {
             const response = await requestHelper.post(
                 "/vendor/create.json",
                 vendorData,
+                adminToken,
             );
 
             expect(response.status).toBe(200);
@@ -39,6 +42,7 @@ describe("Vendor API (Positive)", () => {
             const response = await requestHelper.post(
                 "/vendor/create.json",
                 vendorData,
+                adminToken,
             );
 
             expect(response.status).toBe(200);
@@ -51,6 +55,7 @@ describe("Vendor API (Positive)", () => {
             const response = await requestHelper.post(
                 "/vendor/create.json",
                 vendorData,
+                adminToken,
             );
 
             expect(response.status).toBe(200);
@@ -63,6 +68,7 @@ describe("Vendor API (Positive)", () => {
             const response = await requestHelper.post(
                 "/vendor/create.json",
                 vendorData,
+                adminToken,
             );
 
             expect(response.status).toBe(200);
@@ -75,6 +81,7 @@ describe("Vendor API (Positive)", () => {
             const response = await requestHelper.post(
                 "/vendor/create.json",
                 vendorData,
+                adminToken,
             );
 
             expect(response.status).toBe(200);
@@ -90,6 +97,7 @@ describe("Vendor API (Positive)", () => {
             const response = await requestHelper.post(
                 "/vendor/create.json",
                 vendorData,
+                adminToken,
             );
 
             expect(response.status).toBe(200);
@@ -100,7 +108,7 @@ describe("Vendor API (Positive)", () => {
 
     describe("GET /vendor/list.json", () => {
         it("should return a list of vendors", async () => {
-            const response = await requestHelper.get("/vendor/list.json");
+            const response = await requestHelper.get("/vendor/list.json", adminToken);
 
             expect(response.status).toBe(200);
             expect(Array.isArray(response.body)).toBe(true);
@@ -108,7 +116,7 @@ describe("Vendor API (Positive)", () => {
         });
 
         it("should return vendors with correct structure", async () => {
-            const response = await requestHelper.get("/vendor/list.json");
+            const response = await requestHelper.get("/vendor/list.json", adminToken);
             const vendor = response.body[0];
 
             expect(vendor).toHaveProperty("id");
@@ -122,7 +130,7 @@ describe("Vendor API (Positive)", () => {
         });
 
         it("should include different API formats", async () => {
-            const response = await requestHelper.get("/vendor/list.json");
+            const response = await requestHelper.get("/vendor/list.json", adminToken);
 
             const apiFormats = response.body.map((v: any) => v.api_format);
             expect(apiFormats).toContain("openai");
@@ -134,6 +142,7 @@ describe("Vendor API (Positive)", () => {
         it("should return a vendor by ID", async () => {
             const response = await requestHelper.get(
                 `/vendor/${createdVendorId}`,
+                adminToken,
             );
 
             expect(response.status).toBe(200);
@@ -145,6 +154,7 @@ describe("Vendor API (Positive)", () => {
         it("should return vendor with all fields", async () => {
             const response = await requestHelper.get(
                 `/vendor/${createdVendorId}`,
+                adminToken,
             );
 
             expect(response.body).toHaveProperty("id");
@@ -164,6 +174,7 @@ describe("Vendor API (Positive)", () => {
             const response = await requestHelper.put(
                 `/vendor/${createdVendorId}`,
                 updateData,
+                adminToken,
             );
 
             expect(response.status).toBe(200);
@@ -176,6 +187,7 @@ describe("Vendor API (Positive)", () => {
             const response = await requestHelper.put(
                 `/vendor/${createdVendorId}`,
                 updateData,
+                adminToken,
             );
 
             expect(response.status).toBe(200);
@@ -189,6 +201,7 @@ describe("Vendor API (Positive)", () => {
             const response = await requestHelper.put(
                 `/vendor/${createdVendorId}`,
                 updateData,
+                adminToken,
             );
 
             expect(response.status).toBe(200);
@@ -202,6 +215,7 @@ describe("Vendor API (Positive)", () => {
             const response = await requestHelper.put(
                 `/vendor/${createdVendorId}`,
                 updateData,
+                adminToken,
             );
 
             expect(response.status).toBe(200);
@@ -213,6 +227,7 @@ describe("Vendor API (Positive)", () => {
             const response = await requestHelper.put(
                 `/vendor/${createdVendorId}`,
                 updateData,
+                adminToken,
             );
 
             expect(response.status).toBe(200);
@@ -228,6 +243,7 @@ describe("Vendor API (Positive)", () => {
             const response = await requestHelper.put(
                 `/vendor/${createdVendorId}`,
                 updateData,
+                adminToken,
             );
 
             expect(response.status).toBe(200);
@@ -239,6 +255,7 @@ describe("Vendor API (Positive)", () => {
         it("should preserve unchanged fields", async () => {
             const getResponse = await requestHelper.get(
                 `/vendor/${createdVendorId}`,
+                adminToken,
             );
             const originalUrl = getResponse.body.url;
             const originalToken = getResponse.body.token;
@@ -247,6 +264,7 @@ describe("Vendor API (Positive)", () => {
             const response = await requestHelper.put(
                 `/vendor/${createdVendorId}`,
                 updateData,
+                adminToken,
             );
 
             expect(response.status).toBe(200);

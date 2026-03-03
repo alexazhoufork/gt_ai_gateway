@@ -9,9 +9,12 @@ import testHelpers from "../testHelpers";
  * Integration Tests - Complete Workflows
  */
 
+let adminToken: string;
+
 describe("Integration Tests", () => {
     beforeAll(async () => {
         await testHelpers.truncateDatabase();
+        adminToken = await testHelpers.setupAdminUser();
     });
 
     describe("Complete User -> Vendor -> Model -> Request Workflow", () => {
@@ -26,6 +29,7 @@ describe("Integration Tests", () => {
             const vendorResponse = await requestHelper.post(
                 "/vendor/create.json",
                 vendorFixtures.VENDOR_FIXTURES.openai(),
+                adminToken,
             );
             expect(vendorResponse.status).toBe(200);
             vendorId = vendorResponse.body.id;
@@ -36,6 +40,7 @@ describe("Integration Tests", () => {
             const modelResponse = await requestHelper.post(
                 "/model/create.json",
                 modelFixtures.createRandomModel(vendorId, modelNameValue),
+                adminToken,
             );
             expect(modelResponse.status).toBe(200);
             modelId = modelResponse.body.id;
@@ -47,6 +52,7 @@ describe("Integration Tests", () => {
             const userResponse = await requestHelper.post(
                 "/user/create.json",
                 mockHelper.generateUser(),
+                adminToken,
             );
             expect(userResponse.status).toBe(200);
             userId = userResponse.body.id;
@@ -70,6 +76,7 @@ describe("Integration Tests", () => {
             // Step 5: Verify records were created
             const recordsResponse = await requestHelper.get(
                 "/record/latest.json?limit=1",
+                adminToken,
             );
             expect(recordsResponse.status).toBe(200);
             expect(recordsResponse.body.length).toBeGreaterThan(0);
@@ -82,6 +89,7 @@ describe("Integration Tests", () => {
         it("should verify cross-data associations in record", async () => {
             const recordsResponse = await requestHelper.get(
                 "/record/latest.json?limit=10",
+                adminToken,
             );
             const record = recordsResponse.body.find(
                 (r: any) => r.user_id === userId && r.model_id === modelId,
@@ -92,12 +100,12 @@ describe("Integration Tests", () => {
             expect(record.model_id).toBe(modelId);
 
             // Verify user exists
-            const userResponse = await requestHelper.get(`/user/${userId}`);
+            const userResponse = await requestHelper.get(`/user/${userId}`, adminToken);
             expect(userResponse.status).toBe(200);
             expect(userResponse.body.id).toBe(userId);
 
             // Verify model exists
-            const modelsResponse = await requestHelper.get("/model/list.json");
+            const modelsResponse = await requestHelper.get("/model/list.json", adminToken);
             const model = modelsResponse.body.find(
                 (m: any) => m.id === modelId,
             );
@@ -107,6 +115,7 @@ describe("Integration Tests", () => {
             // Verify vendor exists
             const vendorResponse = await requestHelper.get(
                 `/vendor/${vendorId}`,
+                adminToken,
             );
             expect(vendorResponse.status).toBe(200);
             expect(vendorResponse.body.id).toBe(vendorId);
@@ -141,7 +150,7 @@ describe("Integration Tests", () => {
 
             // Verify records count increased
             const recordsResponse =
-                await requestHelper.get("/record/list.json");
+                await requestHelper.get("/record/list.json", adminToken);
             const userRecords = recordsResponse.body.filter(
                 (r: any) => r.user_id === userId && r.model_id === modelId,
             );
@@ -158,6 +167,7 @@ describe("Integration Tests", () => {
             const vendorResponse = await requestHelper.post(
                 "/vendor/create.json",
                 vendorFixtures.VENDOR_FIXTURES.openai(),
+                adminToken,
             );
             const vendorId = vendorResponse.body.id;
 
@@ -166,6 +176,7 @@ describe("Integration Tests", () => {
                 const userResponse = await requestHelper.post(
                     "/user/create.json",
                     mockHelper.generateUser(),
+                    adminToken,
                 );
                 expect(userResponse.status).toBe(200);
                 users.push({
@@ -182,6 +193,7 @@ describe("Integration Tests", () => {
                         vendorId,
                         `multi-model-${i}`,
                     ),
+                    adminToken,
                 );
                 expect(modelResponse.status).toBe(200);
                 models.push({
@@ -217,7 +229,7 @@ describe("Integration Tests", () => {
 
         it("should verify records correctly track user-model combinations", async () => {
             const recordsResponse =
-                await requestHelper.get("/record/list.json");
+                await requestHelper.get("/record/list.json", adminToken);
 
             // Count unique user-model combinations
             const combinations = new Set<string>();

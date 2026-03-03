@@ -366,7 +366,12 @@ describe("Auth API Tests", () => {
             });
 
             it("should return 200 with admin token", async () => {
-                const response = await requestHelper.get("/user/1", adminToken);
+                // First get list to find a valid user ID
+                const listResponse = await requestHelper.get("/user/list.json", adminToken);
+                expect(listResponse.body.length).toBeGreaterThan(0);
+                const userId = listResponse.body[0].id;
+
+                const response = await requestHelper.get(`/user/${userId}`, adminToken);
 
                 expect(response.status).toBe(200);
                 expect(response.body).toHaveProperty("id");

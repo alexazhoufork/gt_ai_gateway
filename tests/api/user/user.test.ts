@@ -10,10 +10,12 @@ import testHelpers from "../../testHelpers";
 
 let createdUserId: number;
 let createdUserToken: string;
+let adminToken: string;
 
 describe("User API (Positive)", () => {
     beforeAll(async () => {
         await testHelpers.truncateDatabase();
+        adminToken = await testHelpers.setupAdminUser();
     });
     describe("POST /user/create.json", () => {
         it("should create a user with specified token", async () => {
@@ -21,6 +23,7 @@ describe("User API (Positive)", () => {
             const response = await requestHelper.post(
                 "/user/create.json",
                 userData,
+                adminToken,
             );
 
             expect(response.status).toBe(200);
@@ -39,6 +42,7 @@ describe("User API (Positive)", () => {
             const response = await requestHelper.post(
                 "/user/create.json",
                 userData,
+                adminToken,
             );
 
             expect(response.status).toBe(200);
@@ -60,10 +64,12 @@ describe("User API (Positive)", () => {
             const response1 = await requestHelper.post(
                 "/user/create.json",
                 userData1,
+                adminToken,
             );
             const response2 = await requestHelper.post(
                 "/user/create.json",
                 userData2,
+                adminToken,
             );
 
             expect(response1.status).toBe(200);
@@ -77,6 +83,7 @@ describe("User API (Positive)", () => {
             const response = await requestHelper.post(
                 "/user/create.json",
                 userData,
+                adminToken,
             );
 
             expect(response.status).toBe(200);
@@ -88,6 +95,7 @@ describe("User API (Positive)", () => {
             const response = await requestHelper.post(
                 "/user/create.json",
                 userData,
+                adminToken,
             );
 
             expect(response.status).toBe(200);
@@ -101,7 +109,7 @@ describe("User API (Positive)", () => {
 
     describe("GET /user/list.json", () => {
         it("should return a list of users", async () => {
-            const response = await requestHelper.get("/user/list.json");
+            const response = await requestHelper.get("/user/list.json", adminToken);
 
             expect(response.status).toBe(200);
             expect(Array.isArray(response.body)).toBe(true);
@@ -109,7 +117,7 @@ describe("User API (Positive)", () => {
         });
 
         it("should return users with correct structure", async () => {
-            const response = await requestHelper.get("/user/list.json");
+            const response = await requestHelper.get("/user/list.json", adminToken);
             const user = response.body[0];
 
             expect(user).toHaveProperty("id");
@@ -120,7 +128,7 @@ describe("User API (Positive)", () => {
         });
 
         it("should return all users created in tests", async () => {
-            const response = await requestHelper.get("/user/list.json");
+            const response = await requestHelper.get("/user/list.json", adminToken);
 
             expect(response.body.length).toBeGreaterThanOrEqual(4); // At least the users we created
         });
@@ -128,7 +136,7 @@ describe("User API (Positive)", () => {
 
     describe("GET /user/:id", () => {
         it("should return a user by ID", async () => {
-            const response = await requestHelper.get(`/user/${createdUserId}`);
+            const response = await requestHelper.get(`/user/${createdUserId}`, adminToken);
 
             expect(response.status).toBe(200);
             expect(response.body.id).toBe(createdUserId);
@@ -137,7 +145,7 @@ describe("User API (Positive)", () => {
         });
 
         it("should return user with all fields", async () => {
-            const response = await requestHelper.get(`/user/${createdUserId}`);
+            const response = await requestHelper.get(`/user/${createdUserId}`, adminToken);
 
             expect(response.body).toHaveProperty("id");
             expect(response.body).toHaveProperty("name");

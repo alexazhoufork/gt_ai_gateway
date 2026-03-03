@@ -15,15 +15,19 @@ let openaiVendorId: number;
 let anthropicVendorId: number;
 let openaiModelName: string;
 let anthropicModelName: string;
+let adminToken: string;
 
 describe("AI Chat API (Negative)", () => {
     beforeAll(async () => {
         await testHelpers.truncateDatabase();
 
+        adminToken = await testHelpers.setupAdminUser();
+
         // Create test user
         const userResponse = await requestHelper.post(
             "/user/create.json",
             mockHelper.generateUser(),
+            adminToken,
         );
         testUserToken = userResponse.body.token;
 
@@ -31,6 +35,7 @@ describe("AI Chat API (Negative)", () => {
         const openaiVendor = await requestHelper.post(
             "/vendor/create.json",
             vendorFixtures.VENDOR_FIXTURES.openai(),
+            adminToken,
         );
         openaiVendorId = openaiVendor.body.id;
 
@@ -38,6 +43,7 @@ describe("AI Chat API (Negative)", () => {
         const anthropicVendor = await requestHelper.post(
             "/vendor/create.json",
             vendorFixtures.VENDOR_FIXTURES.anthropic(),
+            adminToken,
         );
         anthropicVendorId = anthropicVendor.body.id;
 
@@ -50,6 +56,7 @@ describe("AI Chat API (Negative)", () => {
         await requestHelper.post(
             "/model/create.json",
             modelFixtures.createRandomModel(openaiVendorId, openaiModelName),
+            adminToken,
         );
 
         // Create Anthropic model
@@ -59,6 +66,7 @@ describe("AI Chat API (Negative)", () => {
                 anthropicVendorId,
                 anthropicModelName,
             ),
+            adminToken,
         );
     });
 

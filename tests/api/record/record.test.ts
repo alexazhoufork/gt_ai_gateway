@@ -13,15 +13,19 @@ let testUserId: number;
 let testUserToken: string;
 let testVendorId: number;
 let testModelId: number;
+let adminToken: string;
 
 describe("Record API", () => {
     beforeAll(async () => {
         await testHelpers.truncateDatabase();
 
+        adminToken = await testHelpers.setupAdminUser();
+
         // Create test user
         const user = await requestHelper.post(
             "/user/create.json",
             mockHelper.generateUser(),
+            adminToken,
         );
         testUserId = user.body.id;
         testUserToken = user.body.token;
@@ -30,6 +34,7 @@ describe("Record API", () => {
         const vendor = await requestHelper.post(
             "/vendor/create.json",
             vendorFixtures.VENDOR_FIXTURES.openai(),
+            adminToken,
         );
         testVendorId = vendor.body.id;
 
@@ -37,20 +42,21 @@ describe("Record API", () => {
         const model = await requestHelper.post(
             "/model/create.json",
             modelFixtures.createRandomModel(testVendorId),
+            adminToken,
         );
         testModelId = model.body.id;
     });
 
     describe("GET /record/list.json", () => {
         it("should return a list of records", async () => {
-            const response = await requestHelper.get("/record/list.json");
+            const response = await requestHelper.get("/record/list.json", adminToken);
 
             expect(response.status).toBe(200);
             expect(Array.isArray(response.body)).toBe(true);
         });
 
         it("should return records with correct structure", async () => {
-            const response = await requestHelper.get("/record/list.json");
+            const response = await requestHelper.get("/record/list.json", adminToken);
 
             for (const record of response.body) {
                 expect(record).toHaveProperty("id");
@@ -67,7 +73,7 @@ describe("Record API", () => {
 
     describe("GET /record/latest.json", () => {
         it("should return latest records with default limit", async () => {
-            const response = await requestHelper.get("/record/latest.json");
+            const response = await requestHelper.get("/record/latest.json", adminToken);
 
             expect(response.status).toBe(200);
             expect(Array.isArray(response.body)).toBe(true);
@@ -76,6 +82,7 @@ describe("Record API", () => {
         it("should return latest records with specified limit", async () => {
             const response = await requestHelper.get(
                 "/record/latest.json?limit=5",
+                adminToken,
             );
 
             expect(response.status).toBe(200);
@@ -86,6 +93,7 @@ describe("Record API", () => {
         it("should return records sorted by created_at descending", async () => {
             const response = await requestHelper.get(
                 "/record/latest.json?limit=10",
+                adminToken,
             );
 
             if (response.body.length > 1) {

@@ -15,15 +15,19 @@ let testUserToken: string;
 let anthropicVendorId: number;
 let anthropicModelId: number;
 let anthropicModelName: string;
+let adminToken: string;
 
 describe("AI Messages API (Anthropic)", () => {
     beforeAll(async () => {
         await testHelpers.truncateDatabase();
 
+        adminToken = await testHelpers.setupAdminUser();
+
         // Create test user
         const userResponse = await requestHelper.post(
             "/user/create.json",
             mockHelper.generateUser(),
+            adminToken,
         );
         testUserId = userResponse.body.id;
         testUserToken = userResponse.body.token;
@@ -32,6 +36,7 @@ describe("AI Messages API (Anthropic)", () => {
         const anthropicVendor = await requestHelper.post(
             "/vendor/create.json",
             vendorFixtures.VENDOR_FIXTURES.anthropic(),
+            adminToken,
         );
         console.log("Created vendor:", anthropicVendor.body);
         anthropicVendorId = anthropicVendor.body.id;
@@ -47,6 +52,7 @@ describe("AI Messages API (Anthropic)", () => {
                 anthropicVendorId,
                 anthropicModelName,
             ),
+            adminToken,
         );
         console.log("Created model:", anthropicModel.body);
         anthropicModelId = anthropicModel.body.id;
@@ -54,6 +60,7 @@ describe("AI Messages API (Anthropic)", () => {
         // Verify vendor creation
         const vendorGet = await requestHelper.get(
             `/vendor/${anthropicVendorId}`,
+            adminToken,
         );
         console.log("Retrieved vendor:", vendorGet.body);
     });
@@ -91,6 +98,7 @@ describe("AI Messages API (Anthropic)", () => {
             // Verify record was created
             const recordsResponse = await requestHelper.get(
                 "/record/latest.json?limit=1",
+                adminToken,
             );
             expect(recordsResponse.status).toBe(200);
             expect(recordsResponse.body.length).toBeGreaterThan(0);
@@ -155,6 +163,7 @@ describe("AI Messages API (Anthropic)", () => {
             // Verify record was created for streaming request
             const recordsResponse = await requestHelper.get(
                 "/record/latest.json?limit=1",
+                adminToken,
             );
             expect(recordsResponse.status).toBe(200);
             expect(recordsResponse.body.length).toBeGreaterThan(0);

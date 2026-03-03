@@ -18,15 +18,19 @@ let openaiModelId: number;
 let openaiModelName: string;
 let anthropicModelId: number;
 let anthropicModelName: string;
+let adminToken: string;
 
 describe("AI Chat API", () => {
     beforeAll(async () => {
         await testHelpers.truncateDatabase();
 
+        adminToken = await testHelpers.setupAdminUser();
+
         // Create test user
         const userResponse = await requestHelper.post(
             "/user/create.json",
             mockHelper.generateUser(),
+            adminToken,
         );
         testUserId = userResponse.body.id;
         testUserToken = userResponse.body.token;
@@ -35,6 +39,7 @@ describe("AI Chat API", () => {
         const openaiVendor = await requestHelper.post(
             "/vendor/create.json",
             vendorFixtures.VENDOR_FIXTURES.openai(),
+            adminToken,
         );
         openaiVendorId = openaiVendor.body.id;
 
@@ -42,6 +47,7 @@ describe("AI Chat API", () => {
         const anthropicVendor = await requestHelper.post(
             "/vendor/create.json",
             vendorFixtures.VENDOR_FIXTURES.anthropic(),
+            adminToken,
         );
         anthropicVendorId = anthropicVendor.body.id;
 
@@ -54,6 +60,7 @@ describe("AI Chat API", () => {
         const openaiModel = await requestHelper.post(
             "/model/create.json",
             modelFixtures.createRandomModel(openaiVendorId, openaiModelName),
+            adminToken,
         );
         openaiModelId = openaiModel.body.id;
 
@@ -64,6 +71,7 @@ describe("AI Chat API", () => {
                 anthropicVendorId,
                 anthropicModelName,
             ),
+            adminToken,
         );
         anthropicModelId = anthropicModel.body.id;
     });
@@ -97,6 +105,7 @@ describe("AI Chat API", () => {
             // Verify record was created
             const recordsResponse = await requestHelper.get(
                 "/record/latest.json?limit=1",
+                adminToken,
             );
             expect(recordsResponse.status).toBe(200);
             expect(recordsResponse.body.length).toBeGreaterThan(0);
@@ -147,6 +156,7 @@ describe("AI Chat API", () => {
             // Verify record was created for streaming request
             const recordsResponse = await requestHelper.get(
                 "/record/latest.json?limit=1",
+                adminToken,
             );
             expect(recordsResponse.status).toBe(200);
             expect(recordsResponse.body.length).toBeGreaterThan(0);
