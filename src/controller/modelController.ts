@@ -1,7 +1,7 @@
 import { Context } from "hono";
 import { SgModel } from "../model/sgModel";
 import { SgVendor } from "../model/sgVendor";
-import modelService from "../service/modelService";
+import modelService, { DuplicateModelError } from "../service/modelService";
 
 
 async function checkDuplicateEnabledModel(
@@ -122,6 +122,9 @@ async function updateModel(c: Context) {
         return c.json(updatedModel);
     } catch (error) {
         console.error("[modelController] Error updating model:", error);
+        if (error instanceof DuplicateModelError) {
+            return c.json({ error: error.message }, 400);
+        }
         return c.json(
             { error: "Failed to update model", message: String(error) },
             500,

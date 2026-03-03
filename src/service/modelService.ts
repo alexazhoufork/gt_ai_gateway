@@ -3,6 +3,14 @@ import { SgModel } from "../model/sgModel";
 import { SgVendor } from "../model/sgVendor";
 
 
+export class DuplicateModelError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "DuplicateModelError";
+    }
+}
+
+
 async function getModel(modelName: string, enable?: boolean): Promise<SgModel | null> {
     if (modelName == null) return null;
 
@@ -57,7 +65,7 @@ async function updateModel(
     if (newEnable) {
         const isDuplicate = await checkDuplicateEnabledModel(newName, modelId);
         if (isDuplicate) {
-            throw new Error("An enabled model with this name already exists");
+            throw new DuplicateModelError("An enabled model with this name already exists");
         }
     }
 
