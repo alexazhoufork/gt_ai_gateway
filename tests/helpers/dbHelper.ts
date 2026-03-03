@@ -1,20 +1,17 @@
-import { readdirSync, readFileSync, existsSync } from "fs";
 import Database from "better-sqlite3";
+import { execSync } from "child_process";
 import config from "../config";
 import {
     migrate as runMigrations,
     DBAdapter,
-    Migration,
     MIGRATION_DIR,
 } from "../../script/db";
 
 // Check if we're in worker mode
 const isWorkerMode = process.env.TEST_MODE === "worker";
 
-let db: Database.Database | null = null;
-
 /**
- * LocalDBAdapter wrapper for test database
+ * LocalDBAdapter wrapper for test database (better-sqlite3)
  */
 class LocalDBAdapter implements DBAdapter {
     constructor(private db: Database.Database) {}
@@ -37,29 +34,101 @@ class LocalDBAdapter implements DBAdapter {
 }
 
 /**
+ * WorkerDBAdapter wrapper for test database (wrangler local D1)
+ */
+class WorkerDBAdapter implements DBAdapter {
+    private dbId = "serverless_ai_gateway";
+
+    private runWrangler(args: string[]): string {
+        const cmd = `npx wrangler d1 execute ${this.dbId} --local ${args.join(" ")}`;
+        console.log(`> ${cmd}`);
+        try {
+            const output = execSync(cmd, { encoding: "utf-8", stdio: "pipe" });
+            return output;
+        } catch (e: any) {
+            console.error("Wrangler command failed:", e.message);
+            if (e.stdout) console.error("stdout:", e.stdout);
+            if (e.stderr) console.error("stderr:", e.stderr);
+            throw e;
+        }
+    }
+
+    exec(sql: string): void {
+        const singleLine = sql.replace(/\n/g, " ");
+        this.runWrangler([`--command="${singleLine.replace(/"/g, '\\"')}"`]);
+    }
+
+    query<T>(sql: string): T[] {
+        const output = this.runWrangler([
+            `--json --command="${sql.replace(/"/g, '\\"')}"`,
+        ]);
+        try {
+            const match = output.match(/\[.*\]/s);
+            if (match) {
+                const parsed = JSON.parse(match[0]);
+                if (
+                    Array.isArray(parsed) &&
+                    parsed.length > 0 &&
+                    Array.isArray(parsed[0]?.results)
+                ) {
+                    return parsed[0].results as T[];
+                }
+                return parsed as T[];
+            }
+            return [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    run(sql: string): void {
+        this.exec(sql);
+    }
+
+    close(): void {
+        // No-op for wrangler
+    }
+}
+
+// State
+let localDb: Database.Database | null = null;
+let adapter: DBAdapter | null = null;
+
+/**
+ * Create the appropriate DBAdapter based on TEST_MODE
+ */
+function createAdapter(): DBAdapter {
+    if (isWorkerMode) {
+        console.log("Using WorkerDBAdapter (wrangler local D1)");
+        return new WorkerDBAdapter();
+    } else {
+        if (!localDb) {
+            localDb = new Database(config.DB_CONFIG.path);
+        }
+        console.log("Using LocalDBAdapter (better-sqlite3)");
+        return new LocalDBAdapter(localDb);
+    }
+}
+
+/**
  * Initialize test database with migrations
  */
 async function init(): Promise<void> {
-    if (isWorkerMode) {
-        console.log(
-            "[WORKER_MODE] init() - database managed by wrangler, no local init needed",
-        );
-        return;
-    }
-
-    if (db) {
+    if (adapter) {
         console.log("Database already initialized");
         return;
     }
 
-    console.log("Initializing test database:", config.DB_CONFIG.path);
+    console.log(
+        isWorkerMode
+            ? "Initializing worker test database (wrangler local D1)..."
+            : `Initializing test database: ${config.DB_CONFIG.path}`,
+    );
 
-    // Create database
-    db = new Database(config.DB_CONFIG.path);
+    adapter = createAdapter();
 
     // Run migrations using the shared migration logic
-    const adapter = new LocalDBAdapter(db);
-    await runMigrations(adapter, "test");
+    await runMigrations(adapter, isWorkerMode ? "worker-local" : "test");
 
     console.log("Test database initialized successfully");
 }
@@ -68,29 +137,20 @@ async function init(): Promise<void> {
  * Cleanup database - remove all data
  */
 async function cleanup(): Promise<void> {
-    if (isWorkerMode) {
-        console.log(
-            "[WORKER_MODE] cleanup() - database managed by wrangler, no cleanup needed",
-        );
-        return;
-    }
-
-    if (!db) {
+    if (!adapter) {
         console.log("Database not initialized, nothing to cleanup");
         return;
     }
 
     console.log("Cleaning up test database...");
 
-    const tables = db
-        .prepare(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' AND name NOT LIKE 'd1_%' AND name != '_migrations'",
-        )
-        .all() as { name: string }[];
+    const tables = adapter.query<{ name: string }>(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' AND name NOT LIKE 'd1_%' AND name != '_migrations'",
+    );
 
     for (const table of tables) {
         try {
-            db.prepare(`DROP TABLE IF EXISTS ${table.name}`).run();
+            adapter.exec(`DROP TABLE IF EXISTS ${table.name}`);
         } catch (e) {
             console.error(`Failed to drop table ${table.name}:`, e);
         }
@@ -103,44 +163,36 @@ async function cleanup(): Promise<void> {
  * Truncate tables - remove all data but keep structure
  */
 async function truncate(): Promise<void> {
-    if (isWorkerMode) {
-        // In worker mode, clear D1 tables by calling clearD1Tables from globalSetup
-        const { clearD1Tables, setupAdminUser } = await import("../globalSetup");
-        clearD1Tables();
-        setupAdminUser();
-        return;
-    }
-
     // Auto-connect if not initialized
-    if (!db) {
-        db = new Database(config.DB_CONFIG.path);
+    if (!adapter) {
+        adapter = createAdapter();
     }
 
     console.log("Truncating tables...");
 
-    const tables = db
-        .prepare(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' AND name NOT LIKE 'd1_%' AND name != '_migrations'",
-        )
-        .all() as { name: string }[];
+    const tables = adapter.query<{ name: string }>(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' AND name NOT LIKE 'd1_%' AND name != '_migrations'",
+    );
 
     for (const table of tables) {
         try {
-            db.prepare(`DELETE FROM ${table.name}`).run();
+            adapter.exec(`DELETE FROM ${table.name}`);
         } catch (e) {
             console.error(`Failed to truncate table ${table.name}:`, e);
         }
     }
 
-    // Recreate admin user after truncation
-    const now = new Date().toISOString();
-    try {
-        db.prepare(
-            "INSERT INTO user (name, token, type, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
-        ).run("Admin User", "admin-token-123", "admin", now, now);
-        console.log("Admin user recreated");
-    } catch (e) {
-        console.log("Admin user might already exist:", (e as any).message);
+    // Recreate admin user after truncation (only for LocalDBAdapter)
+    if (!isWorkerMode && localDb) {
+        const now = new Date().toISOString();
+        try {
+            localDb.prepare(
+                "INSERT INTO user (name, token, type, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+            ).run("Admin User", "admin-token-123", "admin", now, now);
+            console.log("Admin user recreated");
+        } catch (e) {
+            console.log("Admin user might already exist:", (e as any).message);
+        }
     }
 
     console.log("Tables truncated");
@@ -150,16 +202,16 @@ async function truncate(): Promise<void> {
  * Execute raw SQL query
  */
 function query<T>(sql: string, params: any[] = []): T[] {
-    if (isWorkerMode) {
-        throw new Error("Direct SQL queries not supported in worker mode");
-    }
-
-    if (!db) {
+    if (!adapter) {
         throw new Error("Database not initialized");
     }
 
     try {
-        return db.prepare(sql).all(...params) as T[];
+        if (isWorkerMode) {
+            return adapter.query<T>(sql);
+        } else {
+            return localDb!.prepare(sql).all(...params) as T[];
+        }
     } catch (e) {
         console.error("Query failed:", sql, params, e);
         throw e;
@@ -169,17 +221,17 @@ function query<T>(sql: string, params: any[] = []): T[] {
 /**
  * Execute raw SQL statement (insert, update, delete)
  */
-function execute(sql: string, params: any[] = []): Database.RunResult {
-    if (isWorkerMode) {
-        throw new Error("Direct SQL execute not supported in worker mode");
-    }
-
-    if (!db) {
+function execute(sql: string, params: any[] = []): Database.RunResult | void {
+    if (!adapter) {
         throw new Error("Database not initialized");
     }
 
     try {
-        return db.prepare(sql).run(...params);
+        if (isWorkerMode) {
+            adapter.run(sql);
+        } else {
+            return localDb!.prepare(sql).run(...params);
+        }
     } catch (e) {
         console.error("Execute failed:", sql, params, e);
         throw e;
@@ -187,34 +239,42 @@ function execute(sql: string, params: any[] = []): Database.RunResult {
 }
 
 /**
- * Get database instance
+ * Get database instance (only works for LocalDBAdapter)
  */
 function getDB(): Database.Database {
     if (isWorkerMode) {
         throw new Error("getDB not supported in worker mode");
     }
 
-    if (!db) {
+    if (!localDb) {
         throw new Error("Database not initialized");
     }
-    return db;
+    return localDb;
+}
+
+/**
+ * Get database adapter instance
+ */
+function getAdapter(): DBAdapter {
+    if (!adapter) {
+        throw new Error("Database not initialized");
+    }
+    return adapter;
 }
 
 /**
  * Close database connection
  */
 function close(): void {
-    if (isWorkerMode) {
-        console.log(
-            "[WORKER_MODE] close() - database managed by wrangler, no close needed",
-        );
-        return;
+    if (adapter) {
+        adapter.close();
+        adapter = null;
+        console.log("Database connection closed");
     }
 
-    if (db) {
-        db.close();
-        db = null;
-        console.log("Database connection closed");
+    if (localDb) {
+        localDb.close();
+        localDb = null;
     }
 }
 
@@ -225,5 +285,6 @@ export default {
     query,
     execute,
     getDB,
+    getAdapter,
     close,
 };
