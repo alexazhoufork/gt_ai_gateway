@@ -13,12 +13,8 @@ export default defineConfig({
     // Increase hookTimeout for wrangler dev startup time
     hookTimeout: 120000,
     // Pass TEST_MODE to forked processes (Vitest 4 syntax)
-    poolOptions: {
-      forks: {
-        execArgv: [],
-        isolate: false,
-      },
-    },
+    execArgv: [],
+    isolate: false,
     env: {
       TEST_MODE: 'worker',
     },
