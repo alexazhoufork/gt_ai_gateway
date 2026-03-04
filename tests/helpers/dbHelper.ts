@@ -165,9 +165,14 @@ function clearD1Tables(): void {
                     ? (parsed[0].results as { name: string }[])
                     : [];
 
-            for (const table of tables) {
-                runD1Command([`--command=\"DELETE FROM ${table.name}\"`]);
+            if (tables.length === 0) {
+                console.log("[WORKER_SETUP] No tables to clear");
+                return;
             }
+
+            // Combine all DELETE statements into a single command for better performance
+            const deleteStatements = tables.map(t => `DELETE FROM ${t.name};`).join(" ");
+            runD1Command([`--command=\"${deleteStatements}\"`]);
 
             console.log(`[WORKER_SETUP] Cleared ${tables.length} tables`);
         }
@@ -412,8 +417,6 @@ export default {
     truncate,       // DELETE cleanup
     query,
     execute,
-    getDB,
     getAdapter,
     close,
-    clearD1Tables,  // Internal D1 table clearing (for truncate)
 };
