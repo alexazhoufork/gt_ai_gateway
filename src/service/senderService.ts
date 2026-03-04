@@ -10,41 +10,8 @@ import {
 import { SgUser } from "../model/sgUser";
 import { SgVendor } from "../model/sgVendor";
 import recordService from "./recordService";
-import { SgRecordStatus, ApiFormat, VendorType } from "../constants";
+import { SgRecordStatus, ApiFormat } from "../constants";
 import sseAccumulator from "../util/sseAccumulator";
-
-/**
- * Parse URLs JSON string to object
- */
-function parseUrls(urls: string): Record<string, string> {
-    try {
-        return urls ? JSON.parse(urls) : {};
-    } catch {
-        return {};
-    }
-}
-
-/**
- * 为 Vendor 填充默认 URL
- * 如果指定格式的 URL 为空，按 type 自动填充（保留原有的默认 URL 填充逻辑）
- */
-function fillDefaultUrl(vendor: SgVendor, format: ApiFormat) {
-    const urls = parseUrls(vendor.urls || "{}");
-
-    // 如果指定格式的 URL 为空，按 type 填充默认值
-    if (!urls[format]) {
-        if (vendor?.type === VendorType.ALIYUN && format === ApiFormat.OPENAI) {
-            return "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
-        }
-        // 可以根据需要添加其他类型的默认 URL 填充规则
-    }
-
-    if (!urls[format]) {
-        throw new Error(`vendor does not have url for ${format} format`);
-    }
-
-    return urls[format];
-}
 
 /**
  * 发送请求到上游 AI 服务
@@ -63,7 +30,7 @@ async function sendRequest(
     vendor: SgVendor,
     format: ApiFormat,
 ): Promise<Response> {
-    const url = fillDefaultUrl(vendor, format);
+    const url = vendor.getUrlByFormat(format);
 
     // 1. 获取请求体，并创建数据库记录
     let body: string = await c.req.text();

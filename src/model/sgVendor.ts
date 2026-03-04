@@ -1,6 +1,6 @@
 import { Model } from "sutando";
 import { inspect, InspectOptions } from "util";
-import { VendorType } from "../constants";
+import { VendorType, ApiFormat } from "../constants";
 
 class SgVendor extends Model {
     table = "vendor";
@@ -13,6 +13,41 @@ class SgVendor extends Model {
 
     created_at!: Date;
     updated_at!: Date;
+
+    /**
+     * Parse URLs JSON string to object
+     */
+    getUrls(): Record<string, string> {
+        try {
+            return this.urls ? JSON.parse(this.urls) : {};
+        } catch {
+            return {};
+        }
+    }
+
+    /**
+     * Get URL by API format with default value handling
+     * @param format - API format (openai, anthropic, google, etc.)
+     * @returns URL string for the specified format
+     * @throws Error if URL cannot be found or determined
+     */
+    getUrlByFormat(format: ApiFormat): string {
+        const urls = this.getUrls();
+
+        // If URL exists for the format, return it
+        if (urls[format]) {
+            return urls[format];
+        }
+
+        // Fill default URL based on type
+        if (this.type === VendorType.ALIYUN && format === ApiFormat.OPENAI) {
+            return "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
+        }
+
+        // 可以根据需要添加其他类型的默认 URL 填充规则
+
+        throw new Error(`vendor does not have url for ${format} format`);
+    }
 
     [inspect.custom](depth: number, options: InspectOptions) {
         return JSON.stringify(this.toData(), null, 2);

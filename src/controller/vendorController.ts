@@ -5,24 +5,12 @@ import errorHandler from "../util/errorHandler";
 
 
 /**
- * Parse URLs JSON string to object for API responses
+ * Format vendor for API response (parse URLs using model method)
  */
-function parseUrls(urls: string): Record<string, string> {
-    try {
-        return urls ? JSON.parse(urls) : {};
-    } catch {
-        return {};
-    }
-}
-
-
-/**
- * Format vendor for API response (parse URLs)
- */
-function formatVendor(vendor: any) {
+function formatVendor(vendor: SgVendor) {
     return {
         ...vendor,
-        urls: parseUrls(vendor.urls || "{}"),
+        urls: vendor.getUrls(),
     };
 }
 
