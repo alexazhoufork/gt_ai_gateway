@@ -1,0 +1,7 @@
+{
+    "anthropic": {
+        "url": "https://dashscope.aliyuncs.com/apps/anthropic/v1/messages",
+        "apiKey": "sk-xxxxx",
+        "model": "qwen-plus"
+    }
+}
