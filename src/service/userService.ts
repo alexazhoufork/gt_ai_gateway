@@ -1,5 +1,12 @@
 import { SgUser } from "../model/sgUser";
 
+function isRootToken(token: string, rootToken?: string): boolean {
+    if (!rootToken) {
+        return false;
+    }
+    return token === rootToken;
+}
+
 async function getUser(token: string): Promise<SgUser | null> {
     console.log("getUser", token);
     if (token == null) return null;
@@ -9,4 +16,5 @@ async function getUser(token: string): Promise<SgUser | null> {
 
 export default {
     getUser,
+    isRootToken,
 };

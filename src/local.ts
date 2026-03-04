@@ -1,7 +1,7 @@
 import { join } from "path";
 import { serve } from "@hono/node-server";
 import ormService from "./service/ormService";
-import app from "./routes";
+import app, { Env } from "./routes";
 
 const DB_PATH = process.env.DB_PATH || join(process.cwd(), "local.db");
 
@@ -15,8 +15,14 @@ async function startServer() {
     // 启动服务器
     const port = parseInt(process.env.PORT || "3000", 10);
 
+    // 构建环境变量
+    const bindings: Env = {
+        DB: ormService.dbAdapter.db,
+        ROOT_TOKEN: process.env.ROOT_TOKEN || "",
+    };
+
     serve({
-        fetch: app.fetch,
+        fetch: (request) => app.fetch(request, bindings),
         port,
     });
 

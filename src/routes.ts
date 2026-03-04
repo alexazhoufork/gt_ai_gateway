@@ -11,6 +11,7 @@ import errorHandler from "./util/errorHandler";
 
 interface Env {
     DB: D1Database;
+    ROOT_TOKEN: string;
 }
 
 const dbMiddleware: MiddlewareHandler<{ Bindings: Env }> = async (c, next) => {

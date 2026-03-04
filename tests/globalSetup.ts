@@ -94,6 +94,7 @@ function startTestServer(): Promise<void> {
             command = ["tsx", serverPath];
             env.PORT = config.SERVER_CONFIG.port.toString();
             env.DB_PATH = config.DB_CONFIG.path;
+            env.ROOT_TOKEN = "test-root-token-123";
         }
 
         console.log(

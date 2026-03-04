@@ -7,18 +7,56 @@ import dbHelper from "./helpers/dbHelper";
 import requestHelper from "./helpers/requestHelper";
 import userFixtures from "./fixtures/userFixtures";
 
+async function truncateAndSetupAdmin() {
+    console.log("Truncating database...");
+    await dbHelper.truncate();
+
+    // Recreate admin user after truncation
+    const adminUser = userFixtures.USER_FIXTURES.admin;
+    console.log("Creating admin user:", adminUser);
+    try {
+        const response = await requestHelper.post("/user/create.json", {
+            name: adminUser.name,
+            token: adminUser.token,
+            type: adminUser.type,
+        });
+        console.log("Admin user created, response:", response.status);
+    } catch (e: any) {
+        console.log("Admin user creation error:", e.response?.status, e.message || e);
+        // User might already exist, ignore
+        if (!e.response || e.response.status !== 400) {
+            console.log("Admin user creation info:", e.message || e);
+        }
+    }
+}
+
+/**
+ * Setup test admin user
+ * Creates an admin user via API if needed, returns the admin token
+ */
+async function setupAdminUser() {
+    const adminUser = userFixtures.USER_FIXTURES.admin;
+
+    // Try to create the admin user (in case it doesn't exist)
+    try {
+        await requestHelper.post("/user/create.json", {
+            name: adminUser.name,
+            token: adminUser.token,
+            type: adminUser.type,
+        });
+    } catch (e: any) {
+        // User might already exist, ignore
+        if (!e.response || e.response.status !== 400) {
+            console.log("Admin user creation info:", e.message || e);
+        }
+    }
+
+    return adminUser.token;
+}
+
 export default {
     query: dbHelper.query,
     execute: dbHelper.execute,
-    truncateDatabase: dbHelper.truncate,
-    /**
-     * Setup test admin user
-     * Creates an admin user via API (admin user already created in globalSetup)
-     * Returns the admin token
-     */
-    async setupAdminUser() {
-        const adminUser = userFixtures.USER_FIXTURES.admin;
-        // Admin user is already created in globalSetup, just return the token
-        return adminUser.token;
-    },
+    truncateDatabase: truncateAndSetupAdmin,
+    setupAdminUser,
 };

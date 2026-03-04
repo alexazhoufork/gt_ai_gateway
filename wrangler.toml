@@ -5,8 +5,8 @@ compatibility_date = "2025-01-19"
 compatibility_flags = [ "nodejs_compat", "no_handle_cross_request_promise_resolution" ]
 
 
-# [vars]
-# MY_VAR = "my-variable"
+[vars]
+# ROOT_TOKEN = "your-root-token-here"
 
 # [[kv_namespaces]]
 # binding = "MY_KV_NAMESPACE"

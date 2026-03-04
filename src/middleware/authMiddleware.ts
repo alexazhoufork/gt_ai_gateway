@@ -1,6 +1,6 @@
 import { Context, MiddlewareHandler } from "hono";
 import userService from "../service/userService";
-import { UserType } from "../constants";
+import { UserType, ROOT_USER_ID } from "../constants";
 
 const requireAdmin: MiddlewareHandler = async (c, next) => {
     const authHeader = c.req.header("Authorization");
@@ -10,6 +10,14 @@ const requireAdmin: MiddlewareHandler = async (c, next) => {
     }
 
     const token = authHeader.split(" ")[1];
+    const rootToken = c.env.ROOT_TOKEN;
+
+    // 检查是否为 root token
+    if (userService.isRootToken(token, rootToken)) {
+        await next();
+        return;
+    }
+
     const user = await userService.getUser(token);
 
     if (!user) {

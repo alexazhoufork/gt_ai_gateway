@@ -313,7 +313,7 @@ async function cleanup(): Promise<void> {
  */
 async function truncate(): Promise<void> {
     if (isWorkerMode) {
-        // In worker mode, clear D1 tables by calling helper function
+        // In worker mode, clear D1 tables and recreate admin user
         clearD1Tables();
         setupAdminUser();
         return;
@@ -341,9 +341,9 @@ async function truncate(): Promise<void> {
     // Recreate admin user after truncation
     const now = new Date().toISOString();
     try {
-        localDb!.prepare(
-            "INSERT INTO user (name, token, type, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
-        ).run("Admin User", "admin-token-123", "admin", now, now);
+        adapter.exec(
+            `INSERT INTO user (name, token, type, created_at, updated_at) VALUES ('Admin User', 'admin-token-123', 'admin', '${now}', '${now}')`,
+        );
         console.log("Admin user recreated");
     } catch (e) {
         console.log("Admin user might already exist:", (e as any).message);

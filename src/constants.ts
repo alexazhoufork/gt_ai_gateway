@@ -20,3 +20,5 @@ export enum UserType {
     NORMAL = "normal",
     ADMIN = "admin",
 }
+
+export const ROOT_USER_ID = -1;
