@@ -1,6 +1,7 @@
 import { Model } from "sutando";
 import { inspect, InspectOptions } from "util";
 import { VendorType, ApiFormat } from "../constants";
+import vendorDefaultUrls from "../service/vendorDefaultUrls";
 
 class SgVendor extends Model {
     table = "vendor";
@@ -39,12 +40,11 @@ class SgVendor extends Model {
             return urls[format];
         }
 
-        // Fill default URL based on type
-        if (this.type === VendorType.ALIYUN && format === ApiFormat.OPENAI) {
-            return "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
+        // Try to get default URL from config
+        const defaultUrl = vendorDefaultUrls.getDefaultUrl(this.type, format);
+        if (defaultUrl) {
+            return defaultUrl;
         }
-
-        // 可以根据需要添加其他类型的默认 URL 填充规则
 
         throw new Error(`vendor does not have url for ${format} format`);
     }
