@@ -145,6 +145,15 @@ const TEST_OPTIONS = {
 };
 
 /**
+ * Log Configuration
+ */
+const LOG_CONFIG = {
+    dir: join(PROJECT_ROOT, "log", "test"),
+    appLogFile: "app.log",
+    mockServerLogFile: "mockerServer.log",
+};
+
+/**
  * Get current upstream mode
  */
 function getUpstreamMode(): UpstreamMode {
@@ -192,6 +201,7 @@ export default {
     DB_CONFIG,
     UPSTREAM_CONFIG,
     TEST_OPTIONS,
+    LOG_CONFIG,
     WORKER_CONFIG,
     TEST_MODE,
     isRealMode,

@@ -1,5 +1,7 @@
 import { createServer, IncomingMessage, ServerResponse } from "http";
 import net from "net";
+import { createWriteStream, existsSync, mkdirSync } from "fs";
+import { join } from "path";
 
 const DEFAULT_MOCK_PORT = 9999;
 
@@ -10,6 +12,32 @@ let isRunning = false;
  * Store received headers for testing
  */
 let receivedHeaders: Record<string, string> = {};
+
+/**
+ * Mock server log stream
+ */
+let mockLogStream: ReturnType<typeof createWriteStream> | null = null;
+
+/**
+ * Initialize mock logger with log directory and file name
+ */
+function initMockLogger(logDir: string, logFileName: string): void {
+    if (!existsSync(logDir)) {
+        mkdirSync(logDir, { recursive: true });
+    }
+    const logPath = join(logDir, logFileName);
+    // Use 'w' mode to overwrite old logs on each run
+    mockLogStream = createWriteStream(logPath, { flags: 'w' });
+}
+
+/**
+ * Log message to mock server log file
+ */
+function mockLog(message: string): void {
+    if (mockLogStream) {
+        mockLogStream.write(`[${new Date().toISOString()}] ${message}\n`);
+    }
+}
 
 /**
  * Check if a port is in use
@@ -40,15 +68,16 @@ function isPortInUse(port: number): Promise<boolean> {
 async function startMockServer(port: number = DEFAULT_MOCK_PORT): Promise<any> {
     if (isRunning) {
         console.log(`Mock server already running on port ${port}`);
+        mockLog(`Mock server already running on port ${port}`);
         return null;
     }
 
     // Check if port is already in use
     const portInUse = await isPortInUse(port);
     if (portInUse) {
-        throw new Error(
-            `Port ${port} is already in use. Please stop any existing mock server or process using this port.`,
-        );
+        const errorMsg = `Port ${port} is already in use. Please stop any existing mock server or process using this port.`;
+        mockLog(`Error: ${errorMsg}`);
+        throw new Error(errorMsg);
     }
 
     return new Promise((resolve, reject) => {
@@ -58,12 +87,11 @@ async function startMockServer(port: number = DEFAULT_MOCK_PORT): Promise<any> {
 
         server.on("error", (err) => {
             if ((err as any).code === "EADDRINUSE") {
-                reject(
-                    new Error(
-                        `Port ${port} is already in use. Please stop any existing mock server or process using this port.`,
-                    ),
-                );
+                const errorMsg = `Port ${port} is already in use. Please stop any existing mock server or process using this port.`;
+                mockLog(`Error: ${errorMsg}`);
+                reject(new Error(errorMsg));
             } else {
+                mockLog(`Error: ${err}`);
                 reject(err);
             }
         });
@@ -71,6 +99,7 @@ async function startMockServer(port: number = DEFAULT_MOCK_PORT): Promise<any> {
         server.listen(port, () => {
             isRunning = true;
             console.log(`Mock AI server listening on port ${port}`);
+            mockLog(`Mock AI server listening on port ${port}`);
             resolve(server);
         });
     });
@@ -85,6 +114,11 @@ async function stopMockServer(serverInstance: any): Promise<void> {
             serverInstance.close(() => {
                 isRunning = false;
                 console.log("Mock AI server stopped");
+                // Close mock log stream
+                if (mockLogStream) {
+                    mockLogStream.end();
+                    mockLogStream = null;
+                }
                 resolve();
             });
         });
@@ -111,7 +145,9 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
             receivedHeaders[key] = value;
         }
     }
-    console.log("[MOCK] Received headers:", receivedHeaders);
+    const headersMsg = `[MOCK] Received headers: ${JSON.stringify(receivedHeaders)}`;
+    console.log(headersMsg);
+    mockLog(headersMsg);
 
     // Add CORS headers
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -132,7 +168,9 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
     }
 
     // Log the request
-    console.log(`[MOCK] ${req.method} ${url}`);
+    const requestMsg = `[MOCK] ${req.method} ${url}`;
+    console.log(requestMsg);
+    mockLog(requestMsg);
 
     // Handle different endpoints
     if (url.includes("/chat/completions")) {
@@ -165,7 +203,9 @@ function handleOpenAIChat(req: IncomingMessage, res: ServerResponse): void {
                 handleOpenAINonStreamResponse(res, data);
             }
         } catch (e) {
-            console.error("Error parsing request body:", e);
+            const errorMsg = `Error parsing request body: ${e}`;
+            console.error(errorMsg);
+            mockLog(errorMsg);
             handleBadRequest(res, "Invalid request body");
         }
     });
@@ -294,7 +334,9 @@ function handleAnthropicMessages(
                 handleAnthropicNonStreamResponse(res, data);
             }
         } catch (e) {
-            console.error("Error parsing request body:", e);
+            const errorMsg = `Error parsing request body: ${e}`;
+            console.error(errorMsg);
+            mockLog(errorMsg);
             handleBadRequest(res, "Invalid request body");
         }
     });
@@ -427,6 +469,7 @@ export default {
     startMockServer,
     stopMockServer,
     isMockServerRunning,
+    initMockLogger,
     getReceivedHeaders,
     clearReceivedHeaders,
 };

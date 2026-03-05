@@ -1,6 +1,6 @@
 import { join } from "path";
 import { spawn, ChildProcess } from "child_process";
-import { existsSync, unlinkSync } from "fs";
+import { existsSync, unlinkSync, mkdirSync, createWriteStream } from "fs";
 import config from "./config";
 import dbHelper from "./helpers/dbHelper";
 import mockServer from "./helpers/mockServer";
@@ -11,6 +11,8 @@ const TEST_WRANGLER_CONFIG = "wrangler.test.toml";
 
 let testServerProcess: ChildProcess | null = null;
 let mockServerProcess: any | null = null;
+let appLogStream: ReturnType<typeof createWriteStream> | null = null;
+let mockLogStream: ReturnType<typeof createWriteStream> | null = null;
 
 /**
  * Global cleanup for when tests are interrupted
@@ -59,11 +61,25 @@ export async function setup(): Promise<void> {
     console.log("=== Test Environment Setup ===");
     console.log("[GLOBAL_SETUP] setup() called at", new Date().toISOString());
 
+    // Ensure log directory exists
+    if (!existsSync(config.LOG_CONFIG.dir)) {
+        mkdirSync(config.LOG_CONFIG.dir, { recursive: true });
+    }
+
+    // Create app.log file stream (use 'w' mode to overwrite old logs on each run)
+    const appLogPath = join(config.LOG_CONFIG.dir, config.LOG_CONFIG.appLogFile);
+    appLogStream = createWriteStream(appLogPath, { flags: 'w' });
+
     // Setup database (handles both node and worker modes)
     await dbHelper.initDatabase();
 
     if (config.useMockServer) {
         console.log("Starting mock AI server...");
+        // Initialize mock server logger
+        mockServer.initMockLogger(
+            config.LOG_CONFIG.dir,
+            config.LOG_CONFIG.mockServerLogFile,
+        );
         mockServerProcess = await mockServer.startMockServer();
         console.log("[GLOBAL_SETUP] Mock AI server started");
     }
@@ -92,6 +108,16 @@ export async function teardown(): Promise<void> {
         await mockServer.stopMockServer(mockServerProcess);
         mockServerProcess = null;
         console.log("[GLOBAL_TEARDOWN] Mock AI server stopped");
+    }
+
+    // Close log streams
+    if (appLogStream) {
+        appLogStream.end();
+        appLogStream = null;
+    }
+    if (mockLogStream) {
+        mockLogStream.end();
+        mockLogStream = null;
     }
 
     // Teardown database (handles both node and worker modes)
@@ -158,6 +184,12 @@ function startTestServer(): Promise<void> {
             if (config.TEST_OPTIONS.verbose) {
                 console.log("[SERVER]", output);
             }
+            // Write to app.log
+            if (appLogStream) {
+                appLogStream.write(
+                    `[${new Date().toISOString()}] [SERVER STDOUT] ${output}\n`,
+                );
+            }
             // 监听服务器启动成功的消息
             if (!serverStarted) {
                 if (isWorkerMode) {
@@ -183,6 +215,12 @@ function startTestServer(): Promise<void> {
 
         testServerProcess.stderr?.on("data", (data) => {
             const error = data.toString().trim();
+            // Write to app.log
+            if (appLogStream) {
+                appLogStream.write(
+                    `[${new Date().toISOString()}] [SERVER STDERR] ${error}\n`,
+                );
+            }
             // Some wrangler output goes to stderr but is not an error
             if (
                 isWorkerMode &&
