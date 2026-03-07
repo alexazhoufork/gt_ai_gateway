@@ -1,5 +1,7 @@
 import { join } from "path";
 import { serve } from "@hono/node-server";
+import { serveStatic } from "@hono/node-server/serve-static";
+import { createMiddleware } from "hono/factory";
 import ormService from "./service/ormService";
 import app, { Env } from "./routes";
 import initLogger, { Logger } from "./util/logger";
@@ -78,6 +80,24 @@ async function startServer() {
         DB: ormService.dbAdapter.db,
         ROOT_TOKEN: process.env.ROOT_TOKEN || "",
     };
+
+    // Static file serving (frontend) - only for local development
+    const distPath = join(process.cwd(), "frontend", "dist");
+    app.use("/assets/*", serveStatic({ root: distPath }));
+    app.use("/*.svg", serveStatic({ root: distPath }));
+
+    // SPA fallback - return index.html for all non-API routes
+    app.get("*", async (c) => {
+        const url = new URL(c.req.url);
+
+        // Skip API routes
+        if (url.pathname.startsWith("/v1/") || url.pathname.includes(".json")) {
+            return c.json({ error: "Not found" }, 404);
+        }
+
+        // Return index.html for SPA routing
+        return serveStatic({ root: distPath, path: "/index.html" })(c);
+    });
 
     serve({
         fetch: (request) => app.fetch(request, bindings),

@@ -1,5 +1,4 @@
 import { Hono, MiddlewareHandler, HTTPException } from "hono";
-import { serveStatic } from "@hono/node-server/serve-static";
 import { join } from "path";
 import gatewayController from "./controller/gatewayController";
 import modelController from "./controller/modelController";
@@ -82,29 +81,6 @@ app.get("/record/:id", authMiddleware.requireAdmin, recordController.getRecord);
 // AI endpoints (no auth middleware)
 app.post("/v1/chat/completions", gatewayController.chatCompletions);
 app.post("/v1/messages", gatewayController.anthropicMessages);
-
-// Static file serving (frontend) - only for local development
-// In Cloudflare Workers, static assets are handled by the assets binding in wrangler.toml
-const isLocal = typeof process !== "undefined" && process.versions?.node;
-
-if (isLocal) {
-    const distPath = join(process.cwd(), "frontend", "dist");
-    app.use("/assets/*", serveStatic({ root: distPath }));
-    app.use("/*.svg", serveStatic({ root: distPath }));
-
-    // SPA fallback - return index.html for all non-API routes
-    app.get("*", async (c) => {
-        const url = new URL(c.req.url);
-
-        // Skip API routes
-        if (url.pathname.startsWith("/v1/") || url.pathname.includes(".json")) {
-            return c.json({ error: "Not found" }, 404);
-        }
-
-        // Return index.html for SPA routing
-        return serveStatic({ root: distPath, path: "/index.html" })(c);
-    });
-}
 
 export { app, Env };
 export default app;
