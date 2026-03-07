@@ -59,6 +59,7 @@ app.get("/vendor/list.json", authMiddleware.requireAdmin, vendorController.listV
 app.get("/vendor/:id", authMiddleware.requireAdmin, vendorController.getVendor);
 app.post("/vendor/create.json", authMiddleware.requireAdmin, vendorController.createVendor);
 app.put("/vendor/:id", authMiddleware.requireAdmin, vendorController.updateVendor);
+app.delete("/vendor/:id", authMiddleware.requireAdmin, vendorController.deleteVendor);
 
 // Model (需要管理员权限)
 app.post("/model/create.json", authMiddleware.requireAdmin, modelController.createModel);

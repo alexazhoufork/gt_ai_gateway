@@ -5,6 +5,28 @@ import { SgVendor } from "../model/sgVendor";
 import { SgModel } from "../model/sgModel";
 import { SgRecord } from "../model/sgRecord";
 
+// 服务器启动时间
+const START_TIME = new Date();
+
+function formatUptime(startTime: Date): string {
+    const now = new Date();
+    const diff = now.getTime() - startTime.getTime();
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (days > 0) {
+        return `${days}天 ${hours % 24}小时`;
+    } else if (hours > 0) {
+        return `${hours}小时 ${minutes % 60}分钟`;
+    } else if (minutes > 0) {
+        return `${minutes}分钟`;
+    } else {
+        return `${seconds}秒`;
+    }
+}
+
 function welcome(c: Context) {
     const message =
         ormService.mode === "cloud"
@@ -28,6 +50,12 @@ async function status(c: Context) {
                 vendors: vendorCount,
                 models: modelCount,
                 records: recordCount,
+            },
+            system: {
+                environment: ormService.mode === "cloud" ? "Cloudflare Workers" : "Local",
+                version: process.env.npm_package_version || "1.0.0",
+                startTime: START_TIME.toISOString(),
+                uptime: formatUptime(START_TIME),
             },
             timestamp: new Date().toISOString(),
         });

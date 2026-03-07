@@ -91,9 +91,36 @@ async function updateVendor(c: Context) {
     return c.json(formatVendor(updatedVendor));
 }
 
+
+async function deleteVendor(c: Context) {
+    const id = c.req.param("id");
+    const vendorId = parseInt(id, 10);
+
+    if (isNaN(vendorId)) {
+        throw new errorHandler.AppError("Invalid ID format");
+    }
+
+    const vendor = await SgVendor.query().find(vendorId);
+
+    if (!vendor) {
+        throw new errorHandler.NotFoundError("Vendor not found");
+    }
+
+    // 检查是否有关联的模型
+    const models = await SgModel.query().where("vendor_id", vendorId).get();
+    if (models.length > 0) {
+        throw new errorHandler.AppError("Cannot delete vendor with associated models");
+    }
+
+    await SgVendor.query().delete(vendorId);
+
+    return c.json({ success: true });
+}
+
 export default {
     listVendors,
     getVendor,
     createVendor,
     updateVendor,
+    deleteVendor,
 };

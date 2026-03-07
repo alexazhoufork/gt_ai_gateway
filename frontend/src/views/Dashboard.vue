@@ -97,10 +97,10 @@ async function loadData() {
 
         if (systemStatusData) {
             systemInfo.value = {
-                environment: systemStatusData.environment || '',
-                version: systemStatusData.version || '',
-                startTime: systemStatusData.startTime || '',
-                uptime: systemStatusData.uptime || '',
+                environment: systemStatusData.system?.environment || '',
+                version: systemStatusData.system?.version || '',
+                startTime: systemStatusData.system?.startTime || '',
+                uptime: systemStatusData.system?.uptime || '',
             };
             systemStatus.value = '正常';
         } else {

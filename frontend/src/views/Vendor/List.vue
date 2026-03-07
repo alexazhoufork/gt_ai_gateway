@@ -53,6 +53,9 @@
                         <a-button type="link" @click="handleView(record)">
                             查看
                         </a-button>
+                        <a-button type="link" danger @click="handleDelete(record)">
+                            删除
+                        </a-button>
                     </a-space>
                 </template>
             </template>
@@ -66,7 +69,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { listVendors } from '@/api/vendor';
+import { message, Modal } from 'ant-design-vue';
+import { listVendors, deleteVendor } from '@/api/vendor';
 import { useTable } from '@/composables/useTable';
 import DialogCreate from './DialogCreate.vue';
 import DialogEdit from './DialogEdit.vue';
@@ -139,6 +143,25 @@ function handleEditSuccess() {
 
 function handleView(record: Vendor) {
     router.push(`/vendor/${record.id}`);
+}
+
+function handleDelete(record: Vendor) {
+    Modal.confirm({
+        title: '确认删除',
+        content: `确定要删除供应商 "${record.name}" 吗？`,
+        okText: '确定',
+        cancelText: '取消',
+        okType: 'danger',
+        onOk: async () => {
+            try {
+                await deleteVendor(record.id);
+                message.success('删除成功');
+                loadData();
+            } catch (error: any) {
+                message.error(error.message || '删除失败');
+            }
+        },
+    });
 }
 
 function getTypeLabel(type: VendorType): string {
