@@ -15,9 +15,9 @@ export interface Record extends BaseEntity {
     end_at: string | null;
 
     // 关联数据
-    user_name?: string;
-    vendor_name?: string;
-    model_name?: string;
+    user_name?: string | null;
+    vendor_name?: string | null;
+    model_name?: string | null;
 }
 
 export interface RecordRequestData {
@@ -65,4 +65,12 @@ export interface RecordQuery extends PaginationParams {
 export interface RecordListResponse {
     list: Record[];
     total: number;
+}
+
+
+// 记录详情，包含关联的名称信息
+export interface RecordDetail extends Record {
+    user_name?: string | null;
+    model_name?: string | null;
+    vendor_name?: string | null;
 }
