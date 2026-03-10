@@ -44,10 +44,10 @@ function welcome(c: Context) {
 
 async function status(c: Context) {
     try {
-        const userCount = await SgUser.query().count();
-        const vendorCount = await SgVendor.query().count();
-        const modelCount = await SgModel.query().count();
-        const recordCount = await SgRecord.query().count();
+        const userCount = Number(await SgUser.query().count() || 0);
+        const vendorCount = Number(await SgVendor.query().count() || 0);
+        const modelCount = Number(await SgModel.query().count() || 0);
+        const recordCount = Number(await SgRecord.query().count() || 0);
 
         const startTime = getInstanceStartTime();
 
