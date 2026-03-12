@@ -31,25 +31,38 @@
             </a-form-item>
             <a-form-item label="URLs 配置（可选）">
                 <div v-for="(item, index) in urlsForm" :key="index" class="url-item">
-                    <a-space style="width: 100%">
-                        <a-form-item style="flex: 1; margin-bottom: 0">
-                            <a-select v-model:value="item.type" placeholder="请选择 URL 类型">
-                                <a-select-option value="openai">OpenAI</a-select-option>
-                                <a-select-option value="anthropic">Anthropic</a-select-option>
+                    <a-row :gutter="8" align="middle">
+                        <a-col :span="6">
+                            <a-select v-model:value="item.type" style="width: 100%" placeholder="请选择 URL 类型">
+                                <a-select-option
+                                    v-for="type in URL_TYPES"
+                                    :key="type.value"
+                                    :value="type.value"
+                                    :disabled="urlsForm.some((u, i) => u.type === type.value && i !== index)"
+                                >
+                                    {{ type.label }}
+                                </a-select-option>
                             </a-select>
-                        </a-form-item>
-                        <a-form-item style="flex: 2; margin-bottom: 0">
+                        </a-col>
+                        <a-col :span="16">
                             <a-input
                                 v-model:value="item.url"
                                 placeholder="请输入 URL"
                             />
-                        </a-form-item>
-                        <a-button type="text" danger @click="removeUrl(index)">
-                            <DeleteOutlined />
-                        </a-button>
-                    </a-space>
+                        </a-col>
+                        <a-col :span="2">
+                            <a-button type="text" danger @click="removeUrl(index)">
+                                <DeleteOutlined />
+                            </a-button>
+                        </a-col>
+                    </a-row>
                 </div>
-                <a-button type="dashed" block @click="addUrl">
+                <a-button
+                    type="dashed"
+                    block
+                    @click="addUrl"
+                    :disabled="urlsForm.length >= URL_TYPES.length"
+                >
                     <PlusOutlined /> 添加 URL
                 </a-button>
             </a-form-item>
@@ -72,6 +85,12 @@ const visible = ref(false);
 const loading = ref(false);
 const formRef = ref<FormInstance>();
 
+const URL_TYPES = [
+    { label: 'OpenAI', value: 'openai' },
+    { label: 'Anthropic', value: 'anthropic' },
+    { label: 'Google', value: 'google' },
+];
+
 const formState = reactive({
     type: 'openai' as const,
     name: '',
@@ -91,7 +110,11 @@ function open() {
 }
 
 function addUrl() {
-    urlsForm.push({ type: 'openai', url: '' });
+    const usedTypes = urlsForm.map(u => u.type);
+    const availableType = URL_TYPES.find(t => !usedTypes.includes(t.value));
+    if (availableType) {
+        urlsForm.push({ type: availableType.value, url: '' });
+    }
 }
 
 function removeUrl(index: number) {
