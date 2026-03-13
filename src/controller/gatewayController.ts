@@ -25,9 +25,7 @@ async function chatCompletions(c: Context) {
 
     // 提取 token
     const token = authHeader.split(" ")[1];
-
-    let user: SgUser | null = await userService.getUser(token!);
-    console.log("user:", user);
+    const user = await userService.getUserByToken(token!, c.env.ROOT_TOKEN);
 
     if (user == null) {
         return c.json({ error: "Invalid token (user not found)" }, 401);
@@ -56,7 +54,7 @@ async function chatCompletions(c: Context) {
         return c.json({ error: "vendor not found" }, 401);
     }
 
-    return sender.sendRequest(c, user!, modelConfig!, vendor!, ApiFormat.OPENAI);
+    return sender.sendRequest(c, user!, modelConfig!, vendor!, ApiFormat.OPENAI, body);
 }
 
 async function anthropicMessages(c: Context) {
@@ -82,8 +80,7 @@ async function anthropicMessages(c: Context) {
         );
     }
 
-    let user: SgUser | null = await userService.getUser(token!);
-    console.log("user:", user);
+    const user = await userService.getUserByToken(token!, c.env.ROOT_TOKEN);
 
     if (user == null) {
         return c.json({ error: "Invalid token (user not found)" }, 401);
@@ -112,7 +109,7 @@ async function anthropicMessages(c: Context) {
         return c.json({ error: "vendor not found" }, 401);
     }
 
-    return sender.sendRequest(c, user, modelConfig, vendor, ApiFormat.ANTHROPIC);
+    return sender.sendRequest(c, user, modelConfig, vendor, ApiFormat.ANTHROPIC, body);
 }
 
 export default {
