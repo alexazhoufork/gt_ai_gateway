@@ -6,7 +6,7 @@ import Database from "better-sqlite3";
 
 const args = process.argv.slice(2);
 export const MIGRATION_DIR = join(process.cwd(), "resource", "migrate");
-const LOCAL_DB_PATH = join(process.cwd(), "local.db");
+const LOCAL_DB_PATH = process.env.DB_PATH || join(process.cwd(), "local.db");
 const TMP_DIR = join(process.cwd(), ".tmp");
 
 export interface Migration {
