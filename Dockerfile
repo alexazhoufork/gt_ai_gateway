@@ -28,16 +28,17 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# 安装运行时需要的库 (better-sqlite3 需要 libstdc++)
+RUN apk add --no-cache libstdc++
+
 # 复制依赖文件和入口脚本
 COPY package*.json docker-entrypoint.sh ./
 
-# 安装生产依赖（包含 native 模块编译环境）
-RUN apk add --no-cache python3 make g++ && \
-    chmod +x docker-entrypoint.sh && \
-    npm ci --production && \
-    apk del python3 make g++
+# 赋予执行权限
+RUN chmod +x docker-entrypoint.sh
 
-# 复制构建产物和源代码
+# 复制构建产物、依赖和源代码
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/frontend/dist ./frontend/dist
 COPY --from=builder /app/script ./script
