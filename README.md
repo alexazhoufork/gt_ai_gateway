@@ -123,7 +123,7 @@ docker run -d \
 
 ```bash
 # 拉取最新镜像
-docker pull ghcr.io/your-username/serverless_ai_gateway:latest
+docker pull ghcr.io/alexazhou/serverless_ai_gateway:latest
 
 # 运行容器
 docker run -d \
@@ -131,7 +131,24 @@ docker run -d \
     -p 8787:8787 \
     -v $(pwd)/data:/app/data \
     -e ROOT_TOKEN=your-secret-root-token \
-    ghcr.io/your-username/serverless_ai_gateway:latest
+    ghcr.io/alexazhou/serverless_ai_gateway:latest
+```
+
+#### 使用 Docker Hub
+
+从 Docker Hub 拉取并运行：
+
+```bash
+# 拉取最新镜像
+docker pull your-dockerhub-username/serverless_ai_gateway:latest
+
+# 运行容器
+docker run -d \
+    --name serverless-ai-gateway \
+    -p 8787:8787 \
+    -v $(pwd)/data:/app/data \
+    -e ROOT_TOKEN=your-secret-root-token \
+    your-dockerhub-username/serverless_ai_gateway:latest
 ```
 
 ### 测试
