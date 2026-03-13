@@ -1,5 +1,6 @@
 import { sutando } from "sutando";
 import { DatabaseAdapter, D1Adapter, SQLiteAdapter } from "./dbAdapter";
+import customError from "../util/customError";
 
 interface ORMOptions {
     mode: "cloud" | "local";
@@ -18,7 +19,7 @@ class ORMService {
             this._dbAdapter = new D1Adapter();
         } else {
             if (!dbPath) {
-                throw new Error("dbPath is required for local mode");
+                throw new customError.AppError("dbPath is required for local mode", 500);
             }
             const Database = (await import("better-sqlite3")).default;
 
@@ -151,7 +152,7 @@ class ORMService {
 
     get dbAdapter(): DatabaseAdapter {
         if (!this._dbAdapter) {
-            throw new Error("ORMService not initialized");
+            throw new customError.AppError("ORMService not initialized", 500);
         }
         return this._dbAdapter;
     }

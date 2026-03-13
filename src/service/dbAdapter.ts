@@ -1,3 +1,5 @@
+import customError from "../util/customError";
+
 // 数据库适配器接口
 export interface DatabaseAdapter {
     exec(sql: string): Promise<void> | void;
@@ -46,14 +48,14 @@ export class D1Adapter implements DatabaseAdapter {
 
     async exec(sql: string): Promise<void> {
         if (!this.db) {
-            throw new Error("D1Adapter: DB not initialized");
+            throw new customError.AppError("D1Adapter: DB not initialized", 500);
         }
         await this.db.exec(sql);
     }
 
     prepare(sql: string): StatementAdapter {
         if (!this.db) {
-            throw new Error("D1Adapter: DB not initialized");
+            throw new customError.AppError("D1Adapter: DB not initialized", 500);
         }
         const stmt = this.db.prepare(sql);
         return new D1StatementAdapter(stmt);

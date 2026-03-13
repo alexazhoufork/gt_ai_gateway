@@ -2,7 +2,7 @@ import { Context } from "hono";
 import { SgVendor } from "../model/sgVendor";
 import { SgModel } from "../model/sgModel";
 import vendorService from "../service/vendorService";
-import errorHandler from "../util/errorHandler";
+import customError from "../util/customError";
 
 
 /**
@@ -33,13 +33,13 @@ async function getVendor(c: Context) {
     const vendorId = parseInt(id, 10);
 
     if (isNaN(vendorId)) {
-        throw new errorHandler.AppError("Invalid ID format");
+        throw new customError.AppError("Invalid ID format");
     }
 
     const vendor = await SgVendor.query().find(vendorId);
 
     if (!vendor) {
-        throw new errorHandler.NotFoundError("Vendor not found");
+        throw new customError.NotFoundError("Vendor not found");
     }
 
     return c.json(formatVendor(vendor));
@@ -52,7 +52,7 @@ async function createVendor(c: Context) {
 
     // Validation - 不验证 urls，允许为空
     if (!type || !name || !token) {
-        throw new errorHandler.AppError("Missing required fields");
+        throw new customError.AppError("Missing required fields");
     }
 
     const instance = await SgVendor.query().create({
@@ -71,7 +71,7 @@ async function updateVendor(c: Context) {
     const vendorId = parseInt(id, 10);
 
     if (isNaN(vendorId)) {
-        throw new errorHandler.AppError("Invalid ID format");
+        throw new customError.AppError("Invalid ID format");
     }
 
     const body = await c.req.json();
@@ -85,7 +85,7 @@ async function updateVendor(c: Context) {
     });
 
     if (!updatedVendor) {
-        throw new errorHandler.NotFoundError("Vendor not found");
+        throw new customError.NotFoundError("Vendor not found");
     }
 
     return c.json(formatVendor(updatedVendor));
@@ -97,19 +97,19 @@ async function deleteVendor(c: Context) {
     const vendorId = parseInt(id, 10);
 
     if (isNaN(vendorId)) {
-        throw new errorHandler.AppError("Invalid ID format");
+        throw new customError.AppError("Invalid ID format");
     }
 
     const vendor = await SgVendor.query().find(vendorId);
 
     if (!vendor) {
-        throw new errorHandler.NotFoundError("Vendor not found");
+        throw new customError.NotFoundError("Vendor not found");
     }
 
     // 检查是否有关联的模型
     const models = await SgModel.query().where("vendor_id", vendorId).get();
     if (models.length > 0) {
-        throw new errorHandler.AppError("Cannot delete vendor with associated models");
+        throw new customError.AppError("Cannot delete vendor with associated models");
     }
 
     await SgVendor.query().delete(vendorId);

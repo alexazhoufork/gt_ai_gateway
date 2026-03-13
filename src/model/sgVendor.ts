@@ -2,6 +2,7 @@ import { Model } from "sutando";
 import { inspect, InspectOptions } from "util";
 import { VendorType, ApiFormat } from "../constants";
 import vendorDefaultUrls from "../service/vendorDefaultUrls";
+import customError from "../util/customError";
 
 class SgVendor extends Model {
     table = "vendor";
@@ -46,7 +47,7 @@ class SgVendor extends Model {
             return defaultUrl;
         }
 
-        throw new Error(`vendor does not have url for ${format} format`);
+        throw new customError.AppError(`vendor does not have url for ${format} format`, 400);
     }
 
     [inspect.custom](depth: number, options: InspectOptions) {

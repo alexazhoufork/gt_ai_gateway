@@ -10,7 +10,7 @@ import systemController from "./controller/systemController";
 import statsController from "./controller/statsController";
 import ormService from "./service/ormService";
 import authMiddleware from "./middleware/authMiddleware";
-import errorHandler from "./util/errorHandler";
+import customError from "./util/customError";
 
 interface Env {
     DB: D1Database;

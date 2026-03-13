@@ -1,7 +1,7 @@
 import { SgModel } from "../model/sgModel";
 
 import { SgVendor } from "../model/sgVendor";
-import errorHandler from "../util/errorHandler";
+import customError from "../util/customError";
 
 
 async function getModel(modelName: string, enable?: boolean): Promise<SgModel | null> {
@@ -58,7 +58,7 @@ async function updateModel(
     if (newEnable) {
         const isDuplicate = await checkDuplicateEnabledModel(newName, modelId);
         if (isDuplicate) {
-            throw new errorHandler.AppError("An enabled model with this name already exists", 409);
+            throw new customError.AppError("An enabled model with this name already exists", 409);
         }
     }
 

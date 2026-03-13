@@ -204,6 +204,35 @@ src/types/
 └── vendor.ts      # 供应商类型
 ```
 
+### 异常处理规范
+
+项目后端引入了统一的异常处理机制，前端及后端业务逻辑均需遵循以下规范：
+
+#### AppError 机制
+
+后端定义了 `customError.AppError` 类，用于抛出可预期的业务异常。
+
+1.  **统一返回格式**：当后端抛出 `AppError` 时，全局错误处理器会将其捕获并转换为统一的 JSON 格式返回给前端。
+2.  **状态码约定**：
+    *   **400 (Bad Request)**: 用于通用的业务逻辑错误（如参数错误、配置缺失等）。
+    *   **401 (Unauthorized)**: 身份验证失败。
+    *   **403 (Forbidden)**: 权限不足。
+    *   **404 (Not Found)**: 资源不存在。
+    *   **409 (Conflict)**: 资源冲突（如名称重复）。
+    *   **500 (Internal Server Error)**: 用于未捕获的系统崩溃或严重错误。
+
+#### 业务异常处理要求
+
+在编写后端业务逻辑（Service/Model/Controller）时：
+*   **严禁直接抛出原生 `Error`**：原生 `Error` 会被视为系统崩溃，导致接口返回 500 错误且不包含友好的提示信息。
+*   **必须抛出 `AppError`**：当遇到业务逻辑不符的情况时，必须使用 `throw new customError.AppError('错误信息', 状态码)`。
+
+#### 前端处理建议
+
+前端 `src/utils/request.ts` 已集成了响应拦截器：
+*   对于 `400` 等业务异常，拦截器会自动从返回的 JSON 中提取 `message` 并通过 Ant Design 的 `message.error` 进行全局提示。
+*   开发者在页面逻辑中只需关注正常的 `try-catch` 或 `.catch()` 流程即可。
+
 ### 开发规范
 
 1. **组件命名**：使用 PascalCase（如 `UserList.vue`）
