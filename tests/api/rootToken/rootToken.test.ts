@@ -232,8 +232,90 @@ describe("Root Token Tests", () => {
 
                 expect(response.status).toBe(200);
                 expect(response.body).toHaveProperty("id");
+                expect(response.body).toHaveProperty("name");
                 expect(response.body.name).toBe("Normal User");
             });
+        });
+    });
+
+    describe("AI Requests with Root Token", () => {
+        let vendorId: number;
+        let modelName = "gpt-3.5-turbo-root";
+
+        beforeAll(async () => {
+            // Create a vendor
+            const vendorResponse = await requestHelper.post(
+                "/vendor/create.json",
+                {
+                    name: "AI Vendor for Root",
+                    type: "other",
+                    urls: {
+                        openai: "http://localhost:9999/chat/completions",
+                        anthropic: "http://localhost:9999/messages"
+                    },
+                    token: "test-vendor-token",
+                },
+                ROOT_TOKEN,
+            );
+            vendorId = vendorResponse.body.id;
+
+            // Create a model
+            await requestHelper.post(
+                "/model/create.json",
+                {
+                    name: modelName,
+                    vendor_id: vendorId,
+                },
+                ROOT_TOKEN,
+            );
+        });
+
+        it("should allow OpenAI chat completions with root token", async () => {
+            const response = await requestHelper.post(
+                "/v1/chat/completions",
+                {
+                    model: modelName,
+                    messages: [{ role: "user", content: "Hello" }],
+                },
+                ROOT_TOKEN,
+            );
+
+            expect(response.status).toBe(200);
+            expect(response.body).toHaveProperty("choices");
+
+            // Verify record user_id
+            const recordsRes = await requestHelper.get("/record/latest.json?limit=1", ROOT_TOKEN);
+            expect(recordsRes.body[0].user_id).toBe(ROOT_USER_ID);
+        });
+
+        it("should allow Anthropic messages with root token", async () => {
+            // Create an Anthropic model
+            const anthropicModel = "claude-3-haiku-20240307";
+            await requestHelper.post(
+                "/model/create.json",
+                {
+                    name: anthropicModel,
+                    vendor_id: vendorId,
+                },
+                ROOT_TOKEN,
+            );
+
+            const response = await requestHelper.postWithApiKey(
+                "/v1/messages",
+                {
+                    model: anthropicModel,
+                    max_tokens: 1024,
+                    messages: [{ role: "user", content: "Hello" }],
+                },
+                ROOT_TOKEN,
+            );
+
+            expect(response.status).toBe(200);
+            expect(response.body.type).toBe("message");
+
+            // Verify record user_id
+            const recordsRes = await requestHelper.get("/record/latest.json?limit=1", ROOT_TOKEN);
+            expect(recordsRes.body[0].user_id).toBe(ROOT_USER_ID);
         });
     });
 

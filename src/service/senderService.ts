@@ -138,6 +138,7 @@ async function sendRequest(
     modelConfig: SgModel,
     vendor: SgVendor,
     format: ApiFormat,
+    body: string,
 ): Promise<Response> {
     let url = vendor.getUrlByFormat(format);
 
@@ -147,8 +148,7 @@ async function sendRequest(
         url = url.replace(/\/$/, "") + "/v1/messages";
     }
 
-    // 1. 读取请求体，创建数据库记录
-    const body: string = await c.req.text();
+    // 1. 创建数据库记录
     const record = await recordService.create(user.id, modelConfig.id, body);
     await recordService.update(record.id, {
         status: SgRecordStatus.PROCESSING,
@@ -158,19 +158,47 @@ async function sendRequest(
     console.log("sendRequest: modelConfig={}", modelConfig);
 
     // 2. 构建上游请求 headers，过滤掉 Cloudflare 注入的 cf- 前缀 header
-    const headers: Record<string, string> = {};
+    // 并且必须排除客户端自带的鉴权 header，避免泄露或导致合并错误
+    // 同时排除浏览器相关的元数据 header，避免上游校验失败
+    const finalHeaders = new Headers();
+    const EXCLUDED_HEADERS = [
+        "authorization",
+        "x-api-key",
+        "anthropic-version",
+        "content-length",
+        "host",
+        "origin",
+        "referer",
+        "connection",
+        "keep-alive",
+        "proxy-authenticate",
+        "proxy-authorization",
+        "te",
+        "trailer",
+        "transfer-encoding",
+        "upgrade",
+    ];
+
     for (const [key, value] of c.req.raw.headers.entries()) {
-        if (!key.toLowerCase().startsWith("cf-")) {
-            headers[key] = value;
+        const lowerKey = key.toLowerCase();
+        if (
+            !lowerKey.startsWith("cf-") &&
+            !lowerKey.startsWith("sec-") && // 排除浏览器 Sec-Headers
+            !EXCLUDED_HEADERS.includes(lowerKey)
+        ) {
+            finalHeaders.set(key, value);
         }
     }
 
     if (format === ApiFormat.ANTHROPIC) {
-        headers["x-api-key"] = vendor.token;
-        headers["anthropic-version"] = "2023-06-01";
+        finalHeaders.set("x-api-key", vendor.token);
+        finalHeaders.set("anthropic-version", "2023-06-01");
     } else {
-        headers["Authorization"] = vendor.token;
+        finalHeaders.set("Authorization", vendor.token.startsWith("Bearer ") ? vendor.token : `Bearer ${vendor.token}`);
     }
+
+    // 强制设置 content-type
+    finalHeaders.set("Content-Type", "application/json");
 
     // 3. OpenAI 流式请求注入 stream_options，让上游在最后一帧返回 usage
     let upstreamBody = body;
@@ -180,8 +208,6 @@ async function sendRequest(
             if (bodyJson.stream === true) {
                 bodyJson.stream_options = { include_usage: true };
                 upstreamBody = JSON.stringify(bodyJson);
-                // body 长度变了，同步更新 content-length，否则上游收到的 body 会被截断
-                headers["content-length"] = String(new TextEncoder().encode(upstreamBody).length);
             }
         } catch (e) {
             console.log("Failed to inject stream_options:", e);
@@ -189,8 +215,18 @@ async function sendRequest(
     }
 
     // 4. 发起上游请求，拿到响应头后立即判断响应类型
-    console.log("do fetch upstream, url:", url);
-    const upstreamRes = await fetch(url, { method: "POST", headers, body: upstreamBody });
+    let upstreamRes: Response;
+    try {
+        upstreamRes = await fetch(url, { method: "POST", headers: finalHeaders, body: upstreamBody });
+    } catch (e: any) {
+        console.error("Upstream fetch failed:", e);
+        await recordService.update(record.id, {
+            status: SgRecordStatus.FAILED,
+            response_data: String(e),
+            end_at: new Date(),
+        });
+        throw e;
+    }
     console.log("upstream response status:", upstreamRes.status);
 
     const isStream =

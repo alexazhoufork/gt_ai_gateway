@@ -35,16 +35,19 @@ app.use("*", dbMiddleware);
 // 注册全局错误处理
 app.onError((err, c) => {
     const error = err as Record<string, unknown>;
-    const statusCode = error.statusCode as number;
-    const message = error.message as string;
+    const statusCode = error.statusCode as number || 500;
+    const message = error.message as string || String(err);
 
-    if (statusCode && message) {
+    // 记录错误日志
+    console.error(`[Error] ${c.req.method} ${c.req.path}:`, err);
+
+    if (error.statusCode && message) {
         return c.json(
             {
                 error: message,
                 code: error.code as string | undefined,
             },
-            statusCode,
+            statusCode as any,
         );
     }
 
