@@ -1,6 +1,7 @@
 {
     "aliyun": {
-        "openai": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+        "openai": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "anthropic": "https://dashscope.aliyuncs.com/apps/anthropic"
     },
     "aliyun_coding": {
         "openai": "https://coding.dashscope.aliyuncs.com/v1",
