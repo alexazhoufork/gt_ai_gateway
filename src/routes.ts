@@ -67,6 +67,7 @@ app.get("/status.json", authMiddleware.requireAdmin, systemController.status);
 
 // Vendor (需要管理员权限)
 app.get("/vendor/list.json", authMiddleware.requireAdmin, vendorController.listVendors);
+app.post("/vendor/batch.json", authMiddleware.requireAdmin, vendorController.getVendorsByIds);
 app.get("/vendor/:id", authMiddleware.requireAdmin, vendorController.getVendor);
 app.post("/vendor/create.json", authMiddleware.requireAdmin, vendorController.createVendor);
 app.put("/vendor/:id", authMiddleware.requireAdmin, vendorController.updateVendor);
@@ -75,11 +76,13 @@ app.delete("/vendor/:id", authMiddleware.requireAdmin, vendorController.deleteVe
 // Model (需要管理员权限)
 app.post("/model/create.json", authMiddleware.requireAdmin, modelController.createModel);
 app.get("/model/list.json", authMiddleware.requireAdmin, modelController.listModels);
+app.post("/model/batch.json", authMiddleware.requireAdmin, modelController.getModelsByIds);
 app.get("/model/:id", authMiddleware.requireAdmin, modelController.getModel);
 app.put("/model/:id", authMiddleware.requireAdmin, modelController.updateModel);
 
 // User (需要管理员权限)
 app.get("/user/list.json", authMiddleware.requireAdmin, userController.listUsers);
+app.post("/user/batch.json", authMiddleware.requireAdmin, userController.getUsersByIds);
 app.get("/user/:id", authMiddleware.requireAdmin, userController.getUser);
 app.post("/user/create.json", authMiddleware.requireAdmin, userController.createUser);
 

@@ -24,6 +24,23 @@ async function getUser(c: Context) {
     return c.json(user);
 }
 
+async function getUsersByIds(c: Context) {
+    const body = await c.req.json();
+    const ids = body.ids;
+    
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return c.json([]);
+    }
+
+    const idList = ids.map(id => parseInt(String(id), 10)).filter(id => !isNaN(id));
+    if (idList.length === 0) {
+        return c.json([]);
+    }
+
+    const users = await SgUser.query().whereIn("id", idList).get();
+    return c.json(users);
+}
+
 async function createUser(c: Context) {
     try {
         const body = await c.req.json();
@@ -55,5 +72,6 @@ async function createUser(c: Context) {
 export default {
     listUsers,
     getUser,
+    getUsersByIds,
     createUser,
 };
