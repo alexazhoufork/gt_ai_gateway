@@ -55,6 +55,9 @@
                         <a-button type="link" @click="handleEdit(record)">
                             编辑
                         </a-button>
+                        <a-button type="link" @click="handleTest(record)">
+                            测试
+                        </a-button>
                         <a-button type="link" @click="handleView(record)">
                             查看
                         </a-button>
@@ -69,6 +72,7 @@
 
     <DialogCreate ref="createDialogRef" @success="handleCreateSuccess" />
     <DialogEdit ref="editDialogRef" @success="handleEditSuccess" />
+    <DialogTest ref="testDialogRef" />
 </template>
 
 <script setup lang="ts">
@@ -79,6 +83,7 @@ import { listVendors, deleteVendor } from '@/api/vendor';
 import { useTable } from '@/composables/useTable';
 import DialogCreate from './DialogCreate.vue';
 import DialogEdit from './DialogEdit.vue';
+import DialogTest from './DialogTest.vue';
 import type { Vendor, VendorType } from '@/types/vendor';
 
 const router = useRouter();
@@ -87,13 +92,14 @@ const { loading, data, pagination, searchForm, setPage } = useTable<Vendor>();
 
 const createDialogRef = ref();
 const editDialogRef = ref();
+const testDialogRef = ref();
 
 const columns = [
     { title: 'ID', key: 'id', dataIndex: 'id', width: 80 },
     { title: '类型', key: 'type', dataIndex: 'type', width: 120 },
     { title: '名称', key: 'name', dataIndex: 'name' },
     { title: '创建时间', key: 'created_at', dataIndex: 'created_at', width: 180 },
-    { title: '操作', key: 'action', width: 120, fixed: 'right' as const },
+    { title: '操作', key: 'action', width: 180, fixed: 'right' as const },
 ];
 
 onMounted(() => {
@@ -144,6 +150,10 @@ function handleEdit(record: Vendor) {
 
 function handleEditSuccess() {
     loadData();
+}
+
+function handleTest(record: Vendor) {
+    testDialogRef.value?.open(record);
 }
 
 function handleView(record: Vendor) {

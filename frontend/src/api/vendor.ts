@@ -24,3 +24,7 @@ export async function updateVendor(id: number, data: UpdateVendorRequest): Promi
 export async function deleteVendor(id: number): Promise<{ success: boolean }> {
     return request.delete(`/vendor/${id}`);
 }
+
+export async function testVendor(id: number, format: string = 'openai'): Promise<any> {
+    return request.post(`/vendor/${id}/test.json`, { format });
+}
