@@ -45,6 +45,24 @@ async function getVendor(c: Context) {
     return c.json(formatVendor(vendor));
 }
 
+async function getVendorsByIds(c: Context) {
+    const body = await c.req.json();
+    const ids = body.ids;
+    
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return c.json([]);
+    }
+
+    const idList = ids.map(id => parseInt(String(id), 10)).filter(id => !isNaN(id));
+    if (idList.length === 0) {
+        return c.json([]);
+    }
+
+    const vendors = await SgVendor.query().whereIn("id", idList).get();
+    const formattedVendors = vendors.map(formatVendor);
+    return c.json(formattedVendors);
+}
+
 
 async function createVendor(c: Context) {
     const body = await c.req.json();
@@ -120,6 +138,7 @@ async function deleteVendor(c: Context) {
 export default {
     listVendors,
     getVendor,
+    getVendorsByIds,
     createVendor,
     updateVendor,
     deleteVendor,

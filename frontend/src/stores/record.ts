@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { listRecords, latestRecords, getRecord } from '@/api/record';
-import { getUser } from '@/api/user';
-import { getModel } from '@/api/model';
-import { getVendor } from '@/api/vendor';
+import { getUser, fetchUsersByIds } from '@/api/user';
+import { getModel, fetchModelsByIds } from '@/api/model';
+import { getVendor, fetchVendorsByIds } from '@/api/vendor';
 import type { Record, RecordQuery, RecordDetail } from '@/types/record';
 
 
@@ -23,8 +23,15 @@ export const useRecordStore = defineStore('record', () => {
         loading.value = true;
         try {
             const response = await listRecords(query);
-            records.value = response.list || [];
+            const fetchedRecords = response.list || [];
             total.value = response.total || 0;
+
+            if (fetchedRecords.length > 0) {
+                // 批量获取关联信息
+                await enrichRecords(fetchedRecords);
+            }
+            
+            records.value = fetchedRecords;
         } catch (error) {
             console.error('获取记录列表失败:', error);
             records.value = [];
@@ -38,13 +45,59 @@ export const useRecordStore = defineStore('record', () => {
         loading.value = true;
         try {
             const response = await latestRecords(limit);
-            records.value = response || [];
+            const fetchedRecords = response || [];
+            
+            if (fetchedRecords.length > 0) {
+                await enrichRecords(fetchedRecords);
+            }
+            
+            records.value = fetchedRecords;
         } catch (error) {
             console.error('获取最新记录失败:', error);
             records.value = [];
         } finally {
             loading.value = false;
         }
+    }
+
+    /**
+     * 为记录列表填充关联名称（用户、模型、供应商）
+     */
+    async function enrichRecords(recordList: Record[]) {
+        const userIds = [...new Set(recordList.map(r => r.user_id).filter(id => id !== null && id !== -1))] as number[];
+        const modelIds = [...new Set(recordList.map(r => r.model_id).filter(id => id !== null))] as number[];
+
+        const [users, models] = await Promise.all([
+            userIds.length > 0 ? fetchUsersByIds(userIds) : Promise.resolve([]),
+            modelIds.length > 0 ? fetchModelsByIds(modelIds) : Promise.resolve([]),
+        ]);
+
+        const userMap = new Map(users.map(u => [u.id, u.name]));
+        const modelMap = new Map(models.map(m => [m.id, m]));
+
+        // 获取供应商信息
+        const vendorIds = [...new Set(models.map(m => m.vendor_id).filter(id => id !== null))] as number[];
+        const vendors = vendorIds.length > 0 ? await fetchVendorsByIds(vendorIds) : [];
+        const vendorMap = new Map(vendors.map(v => [v.id, v.name]));
+
+        recordList.forEach(record => {
+            if (record.user_id === -1) {
+                record.user_name = 'root';
+            } else if (record.user_id) {
+                record.user_name = userMap.get(record.user_id) || `用户${record.user_id}`;
+            }
+            if (record.model_id) {
+                const model = modelMap.get(record.model_id);
+                if (model) {
+                    record.model_name = model.name;
+                    if (model.vendor_id) {
+                        record.vendor_name = vendorMap.get(model.vendor_id) || `供应商${model.vendor_id}`;
+                    }
+                } else {
+                    record.model_name = `模型${record.model_id}`;
+                }
+            }
+        });
     }
 
     async function fetchRecordDetail(id: number): Promise<void> {
@@ -63,7 +116,9 @@ export const useRecordStore = defineStore('record', () => {
             // 并行查询用户、模型和供应商信息
             const promises: Promise<void>[] = [];
 
-            if (record.user_id) {
+            if (record.user_id === -1) {
+                recordDetail.user_name = 'root';
+            } else if (record.user_id) {
                 promises.push(
                     getUser(record.user_id).then(user => {
                         recordDetail.user_name = user.name;
