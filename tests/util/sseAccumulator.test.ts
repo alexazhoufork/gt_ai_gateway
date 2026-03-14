@@ -79,18 +79,18 @@ describe("SSE Accumulator Fixtures", () => {
         const toolCalls = response.choices[0].message.tool_calls ?? [];
 
         expect(response.object).toBe("chat.completion.chunk");
-        expect(response.model).toBe("gpt-3.5-turbo");
+        expect(response.model).toBe("glm-4.7");
         expect(response.choices[0].message.role).toBe("assistant");
         expect(response.choices[0].finish_reason).toBe("tool_calls");
         expect(toolCalls).toHaveLength(1);
         expect(toolCalls[0].type).toBe("function");
         expect(toolCalls[0].function.name).toBe("get_weather");
         expect(toolCalls[0].function.arguments).toBe(
-            "{\"city\":\"San Francisco\",\"unit\":\"celsius\"}",
+            "{\"city\": \"上海\", \"unit\": \"celsius\"}",
         );
         expect(toolCalls[0].id).toBeTruthy();
-        expect(response.usage?.prompt_tokens).toBe(18);
-        expect(response.usage?.completion_tokens).toBe(9);
+        expect(response.usage?.prompt_tokens).toBe(197);
+        expect(response.usage?.completion_tokens).toBe(76);
     });
 
     it("parses anthropic non-tool stream fixture", () => {
@@ -112,20 +112,21 @@ describe("SSE Accumulator Fixtures", () => {
         const toolUseList = response.choices[0].message.tool_use ?? [];
         const actualToolUse = toolUseList.find((item) => item?.name === "get_weather");
 
-        expect(response.model).toBe("claude-3-haiku-20240307");
+        expect(response.model).toBe("glm-4.7");
         expect(response.choices[0].message.role).toBe("assistant");
+        expect(response.choices[0].message.thinking?.length).toBeGreaterThan(0);
         expect(response.choices[0].finish_reason).toBe("tool_use");
         expect(actualToolUse).toBeDefined();
         expect(actualToolUse?.id).toBeTruthy();
         expect(actualToolUse?.input).toEqual({
-            city: "San Francisco",
+            city: "上海",
             unit: "celsius",
         });
         expect(actualToolUse?.input_json).toBe(
-            "{\"city\":\"San Francisco\",\"unit\":\"celsius\"}",
+            "{\"city\": \"上海\", \"unit\": \"celsius\"}",
         );
-        expect(response.usage?.prompt_tokens).toBe(14);
-        expect(response.usage?.completion_tokens).toBe(11);
-        expect(response.usage?.total_tokens).toBe(25);
+        expect(response.usage?.prompt_tokens).toBe(197);
+        expect(response.usage?.completion_tokens).toBe(77);
+        expect(response.usage?.total_tokens).toBe(274);
     });
 });
