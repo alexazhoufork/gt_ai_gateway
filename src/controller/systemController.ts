@@ -4,6 +4,7 @@ import { SgUser } from "../model/sgUser";
 import { SgVendor } from "../model/sgVendor";
 import { SgModel } from "../model/sgModel";
 import { SgRecord } from "../model/sgRecord";
+import { VERSION } from "../constants/version";
 
 // 当前实例的启动时间（延迟初始化，避免 Workers 模块加载时日期异常）
 let INSTANCE_START_TIME: Date | null = null;
@@ -63,7 +64,7 @@ async function status(c: Context) {
             },
             system: {
                 environment: ormService.mode === "cloud" ? "Cloudflare Workers" : "Local",
-                version: process.env.npm_package_version || "1.0.0",
+                version: VERSION,
                 startTime: startTime.toISOString(),
                 uptime: formatUptime(startTime),
             },
