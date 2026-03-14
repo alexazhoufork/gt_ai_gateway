@@ -54,9 +54,27 @@ npm install
 
 ```bash
 # .dev.vars
-ROOT_TOKEN=your-admin-token-here
+ROOT_TOKEN=root-token-123
 PORT=8787
+RECORD_LOG_ENABLED=false
 ```
+
+### 开发常用 Token 说明
+
+为方便日常开发和测试，系统预设或建议使用以下 Token 进行管理操作：
+
+| Token 类型 | 建议值 | 说明 |
+|------|--------|------|
+| **Root Token** | `root-token-123` | 系统最高权限。用于初次登录管理后台、创建其他管理员或普通用户。需配置在 `.dev.vars` 的 `ROOT_TOKEN` 中。 |
+| **Admin Token** | `admin-token-123` | 测试环境下预设的管理员 Token。在运行后端测试（`npm run backend:test`）时，系统会自动创建一个使用此 Token 的管理员用户。 |
+
+> **注意**：以上 Token 仅建议在**本地开发和测试环境**中使用。生产环境部署时，请务必通过 Cloudflare Workers 环境变量配置复杂的随机字符串作为 `ROOT_TOKEN`。
+
+### 日志相关环境变量
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `RECORD_LOG_ENABLED` | `false` | 是否在 `recordService` 中输出请求记录创建/更新日志，适合本地排查 |
 
 ---
 
@@ -94,6 +112,44 @@ Wrangler 会启动本地开发服务器，模拟 Cloudflare Workers 环境
 | `npm run backend:start` | Node 生产模式 |
 | `npm run backend:deploy` | 部署到 Cloudflare Workers |
 | `npm run backend:test` | 运行后端测试 |
+
+### 请求记录与流式日志
+
+后端对一次 AI 请求通常会产生两类记录，它们用途不同：
+
+1. **数据库请求记录**
+   - 由 `src/service/recordService.ts` 负责创建和更新。
+   - 每次请求开始时会创建一条 `record` 记录，保存 `user_id`、`model_id`、`request_data`、状态、耗时和 token 统计等。
+   - 流式请求结束后，会把通过 `src/util/sseAccumulator.ts` 聚合出的完整响应写回 `response_data`。
+   - 若设置 `RECORD_LOG_ENABLED=true`，`recordService` 会额外打印创建和更新日志，方便本地调试。
+
+2. **流式原始日志文件**
+   - 仅在上游返回 SSE 流式响应时启用，逻辑位于 `src/service/senderService.ts`。
+   - 服务会逐块读取上游 SSE 字节流，并将原始 chunk 追加写入本地文件：
+     `log/stream/<record.id>.log`
+   - 这个文件保存的是原始流内容，适合排查：
+     - SSE 分帧问题
+     - 上游返回的真实事件顺序
+     - `usage`、`finish_reason` 等字段的实际出现位置
+   - 该日志与数据库中的 `response_data` 不同：
+     - `response_data` 是聚合后的完整响应
+     - `log/stream/<record.id>.log` 是未聚合的原始流
+
+#### 本地目录说明
+
+在 Node 本地模式下，日志目录位于项目根目录：
+
+```text
+log/
+├── app-YYYY-MM-DD.log      # 应用日志
+└── stream/
+    └── <record.id>.log     # 对应一次流式请求的原始 SSE 日志
+```
+
+说明：
+- `record.id` 与数据库 `record` 表主键一致，可通过后台请求记录页面或接口查询后定位对应日志文件。
+- 非流式请求不会生成 `log/stream/*.log` 文件。
+- 如果目录不存在，服务会在首次处理流式请求时自动创建。
 
 ## 数据库配置与管理
 
