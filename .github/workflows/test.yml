@@ -12,6 +12,7 @@ on:
 
 env:
   STREAM_LOG_ENABLED: true
+  TEST_REAL_API: false
 
 jobs:
   test-node:

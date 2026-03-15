@@ -250,10 +250,10 @@ describe("AI Messages API (Anthropic)", () => {
                 const { targetPath, content: streamLog } =
                     await streamLogHelper.moveStreamLogToResource(
                         latestRecord.id,
-                        "anthropic-tool-use-stream.log",
+                        "anthropic-tool-use-stream-test.log",
                     );
 
-                expect(targetPath.endsWith("tests/resource/anthropic-tool-use-stream.log")).toBe(true);
+                expect(targetPath.endsWith("tests/resource/anthropic-tool-use-stream-test.log")).toBe(true);
                 expect(streamLog).toContain("\"tool_use\"");
                 expect(streamLog).toContain("\"input_json_delta\"");
                 expect(streamLog).toContain("\"stop_reason\":\"tool_use\"");

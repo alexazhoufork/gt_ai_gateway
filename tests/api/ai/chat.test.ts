@@ -246,10 +246,10 @@ describe("AI Chat API", () => {
                 const { targetPath, content: streamLog } =
                     await streamLogHelper.moveStreamLogToResource(
                         latestRecord.id,
-                        "openai-tool-call-stream.log",
+                        "openai-tool-call-stream-test.log",
                     );
 
-                expect(targetPath.endsWith("tests/resource/openai-tool-call-stream.log")).toBe(true);
+                expect(targetPath.endsWith("tests/resource/openai-tool-call-stream-test.log")).toBe(true);
                 expect(streamLog).toContain("\"tool_calls\"");
                 expect(streamLog).toContain("\"get_weather\"");
                 expect(streamLog).toContain("\"finish_reason\":\"tool_calls\"");
