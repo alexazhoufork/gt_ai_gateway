@@ -1,11 +1,11 @@
-FROM node:20-alpine AS builder
+# 1. 前端构建阶段 (强制在宿主机原生平台运行，避免 QEMU 仿真，速度极快)
+FROM --platform=$BUILDPLATFORM node:20-alpine AS frontend-builder
+WORKDIR /app/frontend
 
-WORKDIR /app
+# 复制前端依赖文件
+COPY frontend/package*.json ./
 
-# 复制后端依赖文件
-COPY package*.json ./
-
-# 安装后端依赖 (优化网络重试和并发)
+# 安装前端依赖 (优化网络重试、超时和并发)
 RUN npm config set fetch-retries 10 && \
     npm config set fetch-retry-mintimeout 3000 && \
     npm config set fetch-retry-maxtimeout 10000 && \
@@ -13,30 +13,33 @@ RUN npm config set fetch-retries 10 && \
     npm config set maxsockets 30 && \
     npm ci --loglevel info
 
-# 复制前端依赖文件
-COPY frontend/package*.json ./frontend/
+# 复制前端源代码并执行构建 (在 amd64 上运行 Vite 仅需数十秒)
+COPY frontend/ ./
+RUN npm run build
 
-# 安装前端依赖 (同步优化网络设置)
-RUN cd frontend && \
-    npm config set fetch-retries 10 && \
+# 2. 依赖和源码准备阶段 (针对每个目标架构分别运行)
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# 复制后端依赖文件
+COPY package*.json ./
+
+# 安装后端依赖 (better-sqlite3 等 native 模块会在此根据目标架构进行编译/下载)
+RUN npm config set fetch-retries 10 && \
     npm config set fetch-retry-mintimeout 3000 && \
     npm config set fetch-retry-maxtimeout 10000 && \
     npm config set fetch-timeout 30000 && \
     npm config set maxsockets 30 && \
     npm ci --loglevel info
 
-# 复制源代码
+# 从 frontend-builder 阶段直接复制构建产物 (彻底跳过在 arm64 模拟器中跑前端构建)
+COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
+
+# 复制后端源代码
 COPY . .
 
-# 构建前端
-RUN npm run frontend:build
-
-# 编译 TypeScript（如果需要）
-# 注意：项目使用 tsx 运行，不需要编译，但为了优化可以添加
-
-# 生产镜像
+# 3. 生产环境镜像阶段
 FROM node:20-alpine
-
 WORKDIR /app
 
 # 安装运行时需要的库 (better-sqlite3 需要 libstdc++)
