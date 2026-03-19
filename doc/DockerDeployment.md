@@ -63,7 +63,6 @@ docker run -d \
     -p 8787:8787 \
     -v $(pwd)/data:/app/data \
     -e ROOT_TOKEN=your-secret-root-token \
-    -e LOG_DIR=/app/data/log \
     serverless_ai_gateway
 ```
 
@@ -101,7 +100,6 @@ docker run -d \
     -p 8787:8787 \
     -v $(pwd)/data:/app/data \
     -e ROOT_TOKEN=your-secret-root-token \
-    -e LOG_DIR=/app/data/log \
     alexazhou/serverless_ai_gateway:latest
 ```
 
@@ -127,7 +125,7 @@ docker run -d \
 | 基础镜像 | `node:20-alpine` |
 | 暴露端口 | `8787` |
 | 数据库路径 | `/app/data/local.db` |
-| 日志路径 | `/app/data/log`（通过 `LOG_DIR` 环境变量配置） |
+| 日志路径 | `/app/data/log`（Docker 镜像内置默认值） |
 | 健康检查 | 每 30 秒检查 `/welcome` 端点 |
 
 ---

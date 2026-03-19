@@ -19,7 +19,24 @@
 
 ## 快速开始
 
-### 1. 环境准备
+### 方式一：Docker 快速启动（推荐）
+
+如果你只是想快速体验，无需配置开发环境，可以直接使用已构建好的 Docker 镜像：
+
+```bash
+docker run -d \
+    --name serverless_ai_gateway \
+    -p 8787:8787 \
+    -v $(pwd)/data:/app/data \
+    -e ROOT_TOKEN=your-secret-root-token \
+    alexazhou/serverless_ai_gateway:latest
+```
+
+访问 `http://localhost:8787` 即可使用。更多 Docker 部署方式请参考 [Docker 部署文档](doc/DockerDeployment.md)。
+
+### 方式二：本地开发
+
+#### 1. 环境准备
 确保已安装 Node.js (推荐 v20+)。
 
 ### 2. 安装依赖
