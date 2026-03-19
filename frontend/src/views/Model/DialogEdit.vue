@@ -34,7 +34,15 @@
                 <a-switch v-model:checked="formState.enable" />
             </a-form-item>
             <a-divider>计费设置</a-divider>
-            <a-form-item label="输入价格 (元/千tokens)" name="input_price">
+            <a-form-item>
+                <template #label>
+                    <span style="display: flex; align-items: center; gap: 4px;">
+                        输入价格
+                        <a-tooltip title="元/千tokens">
+                            <InfoCircleOutlined style="font-size: 12px; color: #999;" />
+                        </a-tooltip>
+                    </span>
+                </template>
                 <a-input-number
                     v-model:value="formState.input_price"
                     placeholder="请输入输入价格"
@@ -43,10 +51,18 @@
                     style="width: 100%"
                 />
                 <template #extra>
-                    <span style="color: #999; font-size: 12px">输入token的计费价格，单位：元/千tokens</span>
+                    <span style="color: #999; font-size: 12px">输入token的计费价格</span>
                 </template>
             </a-form-item>
-            <a-form-item label="输出价格 (元/千tokens)" name="output_price">
+            <a-form-item>
+                <template #label>
+                    <span style="display: flex; align-items: center; gap: 4px;">
+                        输出价格
+                        <a-tooltip title="元/千tokens">
+                            <InfoCircleOutlined style="font-size: 12px; color: #999;" />
+                        </a-tooltip>
+                    </span>
+                </template>
                 <a-input-number
                     v-model:value="formState.output_price"
                     placeholder="请输入输出价格"
@@ -55,7 +71,7 @@
                     style="width: 100%"
                 />
                 <template #extra>
-                    <span style="color: #999; font-size: 12px">输出token的计费价格，单位：元/千tokens</span>
+                    <span style="color: #999; font-size: 12px">输出token的计费价格</span>
                 </template>
             </a-form-item>
         </a-form>
@@ -66,6 +82,7 @@
 import { ref, reactive } from 'vue';
 import { message } from 'ant-design-vue/es';
 import type { FormInstance } from 'ant-design-vue/es';
+import { InfoCircleOutlined } from '@ant-design/icons-vue';
 import { updateModel } from '@/api/model';
 import { listVendors } from '@/api/vendor';
 import type { Model } from '@/types/model';

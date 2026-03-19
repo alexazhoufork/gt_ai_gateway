@@ -50,6 +50,9 @@
                         {{ getTypeLabel(record.type) }}
                     </a-tag>
                 </template>
+                <template v-if="column.key === 'created_at'">
+                    {{ formatDate(record.created_at) }}
+                </template>
                 <template v-if="column.key === 'action'">
                     <a-space>
                         <a-button type="link" @click="handleEdit(record)">
@@ -81,6 +84,7 @@ import { useRouter } from 'vue-router';
 import { message, Modal } from 'ant-design-vue/es';
 import { listVendors, deleteVendor } from '@/api/vendor';
 import { useTable } from '@/composables/useTable';
+import { formatDate } from '@/utils/format';
 import DialogCreate from './DialogCreate.vue';
 import DialogEdit from './DialogEdit.vue';
 import DialogTest from './DialogTest.vue';

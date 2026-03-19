@@ -44,26 +44,39 @@
             @change="handleTableChange"
             :row-key="(record: Model) => record.id"
         >
+            <template #headerCell="{ column }">
+                <template v-if="column.key === 'price'">
+                    <span style="display: flex; align-items: center; gap: 4px;">
+                        价格
+                        <a-tooltip title="元/千tokens">
+                            <InfoCircleOutlined style="font-size: 12px; color: #999;" />
+                        </a-tooltip>
+                    </span>
+                </template>
+            </template>
             <template #bodyCell="{ column, record }">
                 <template v-if="column.key === 'vendor_id'">
                     {{ getVendorName(record.vendor_id) }}
                 </template>
                 <template v-if="column.key === 'enable'">
-                    <a-tag :color="record.enable ? 'green' : 'red'">
-                        {{ record.enable ? '启用' : '禁用' }}
+                    <a-tag :color="Boolean(record.enable) ? 'green' : 'red'">
+                        {{ Boolean(record.enable) ? '启用' : '禁用' }}
                     </a-tag>
                 </template>
                 <template v-if="column.key === 'price'">
                     <div class="price-display">
                         <div class="price-row">
-                            <a-tooltip title="输入价格">↓</a-tooltip>
+                            <ArrowUpOutlined class="price-icon input" />
                             <span>¥{{ (record.input_price || 0).toFixed(6) }}</span>
                         </div>
                         <div class="price-row">
-                            <a-tooltip title="输出价格">↑</a-tooltip>
+                            <ArrowDownOutlined class="price-icon output" />
                             <span>¥{{ (record.output_price || 0).toFixed(6) }}</span>
                         </div>
                     </div>
+                </template>
+                <template v-if="column.key === 'created_at'">
+                    {{ formatDate(record.created_at) }}
                 </template>
                 <template v-if="column.key === 'action'">
                     <a-space>
@@ -86,9 +99,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { ArrowUpOutlined, ArrowDownOutlined, InfoCircleOutlined } from '@ant-design/icons-vue';
 import { listModels } from '@/api/model';
 import { listVendors } from '@/api/vendor';
 import { useTable } from '@/composables/useTable';
+import { formatDate } from '@/utils/format';
 import DialogCreate from './DialogCreate.vue';
 import DialogEdit from './DialogEdit.vue';
 import type { Model } from '@/types/model';
@@ -109,7 +124,7 @@ const columns = [
     { title: '模型名称', key: 'name', dataIndex: 'name' },
     { title: '所属供应商', key: 'vendor_id', dataIndex: 'vendor_id', width: 150 },
     { title: '状态', key: 'enable', dataIndex: 'enable', width: 100 },
-    { title: '价格 (元/千tokens)', key: 'price', dataIndex: 'price', width: 180 },
+    { title: '价格', key: 'price', width: 180 },
     { title: '创建时间', key: 'created_at', dataIndex: 'created_at', width: 180 },
     { title: '操作', key: 'action', width: 120, fixed: 'right' as const },
 ];
@@ -214,8 +229,15 @@ function getVendorName(vendorId: number): string {
     font-size: 12px;
 }
 
-.price-row .anticon {
-    font-size: 10px;
-    color: #8c8c8c;
+.price-icon {
+    font-size: 12px;
+}
+
+.price-icon.input {
+    color: #1890ff;
+}
+
+.price-icon.output {
+    color: #52c41a;
 }
 </style>

@@ -18,9 +18,15 @@
                 </a-descriptions-item>
                 <a-descriptions-item label="输入价格">
                     ¥{{ (model.input_price || 0).toFixed(6) }} / 千tokens
+                    <a-tooltip title="元/千tokens" placement="right">
+                        <InfoCircleOutlined style="font-size: 12px; color: #999; margin-left: 4px;" />
+                    </a-tooltip>
                 </a-descriptions-item>
                 <a-descriptions-item label="输出价格">
                     ¥{{ (model.output_price || 0).toFixed(6) }} / 千tokens
+                    <a-tooltip title="元/千tokens" placement="right">
+                        <InfoCircleOutlined style="font-size: 12px; color: #999; margin-left: 4px;" />
+                    </a-tooltip>
                 </a-descriptions-item>
                 <a-descriptions-item label="创建时间">
                     {{ formatDate(model.created_at) }}
@@ -36,6 +42,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { InfoCircleOutlined } from '@ant-design/icons-vue';
 import { getModel } from '@/api/model';
 import { formatDate } from '@/utils/format';
 import type { Model } from '@/types/model';
