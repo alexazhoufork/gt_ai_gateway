@@ -43,5 +43,6 @@ onMounted(() => {
     flex: 1;
     overflow-y: auto;
     padding: 24px;
+    background: var(--bg-page);
 }
 </style>
