@@ -41,7 +41,7 @@ const router = useRouter();
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
 
-const iconProps = {
+const strokeIconProps = {
     viewBox: '0 0 24 24',
     width: '1em',
     height: '1em',
@@ -53,11 +53,18 @@ const iconProps = {
     'aria-hidden': 'true',
 };
 
+const fillIconProps = {
+    viewBox: '0 0 24 24',
+    width: '24',
+    height: '24',
+    'aria-hidden': 'true',
+};
+
 const SunIcon = {
     render() {
         return h(
             'svg',
-            iconProps,
+            strokeIconProps,
             [
                 h('circle', { cx: '12', cy: '12', r: '4' }),
                 h('path', { d: 'M12 2.5v2.2' }),
@@ -77,10 +84,10 @@ const MoonIcon = {
     render() {
         return h(
             'svg',
-            iconProps,
+            strokeIconProps,
             [
                 h('path', {
-                    d: 'M20 14.2A8 8 0 0 1 9.8 4 8.6 8.6 0 1 0 20 14.2z',
+                    d: 'M20 14.5A8.5 8.5 0 0 1 9.5 4a7.8 7.8 0 1 0 10.5 10.5Z',
                 }),
             ],
         );
@@ -135,27 +142,36 @@ function toggleTheme() {
 .header-right {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
 }
 
 .theme-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
-    font-size: 24px;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    font-size: 20px;
 }
 
 .theme-btn :deep(svg) {
-    width: 24px;
-    height: 24px;
+    display: block;
+    width: 18px;
+    height: 18px;
+    flex: none;
 }
 
 .user-btn {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
+    padding-inline: 4px;
+    font-size: 17px;
+}
+
+.user-btn :deep(.anticon) {
+    font-size: 18px;
 }
 
 .username {
