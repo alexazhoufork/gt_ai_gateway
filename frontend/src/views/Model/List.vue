@@ -105,6 +105,7 @@ import { listModels } from '@/api/model';
 import { listVendors } from '@/api/vendor';
 import { useResourceTable } from '@/composables/useResourceTable';
 import { formatDate } from '@/utils/format';
+import { normalizeListResponse } from '@/utils/listResponse';
 import DialogCreate from './DialogCreate.vue';
 import DialogEdit from './DialogEdit.vue';
 import type { Model, ModelQuery } from '@/types/model';
@@ -143,7 +144,7 @@ const columns: TableColumnsType<Model> = [
 async function loadVendors() {
     vendorsLoading.value = true;
     try {
-        vendors.value = await listVendors();
+        vendors.value = normalizeListResponse(await listVendors()).list;
     } catch (error) {
         console.error('加载供应商列表失败:', error);
     } finally {

@@ -174,6 +174,7 @@ import { listModels } from '@/api/model';
 import StreamOutput from '@/components/common/StreamOutput.vue';
 import type { ApiTestHistory } from '@/types/gateway';
 import type { Model } from '@/types/model';
+import { normalizeListResponse } from '@/utils/listResponse';
 
 const apiTestStore = useApiTestStore();
 const models = ref<Model[]>([]);
@@ -186,7 +187,7 @@ onMounted(() => {
 async function loadModels() {
     modelsLoading.value = true;
     try {
-        models.value = await listModels();
+        models.value = normalizeListResponse(await listModels()).list;
     } catch {
         message.error('加载模型列表失败');
     } finally {

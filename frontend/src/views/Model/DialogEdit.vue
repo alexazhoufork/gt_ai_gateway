@@ -87,6 +87,7 @@ import { updateModel } from '@/api/model';
 import { listVendors } from '@/api/vendor';
 import type { Model } from '@/types/model';
 import type { Vendor as VendorType } from '@/types/vendor';
+import { normalizeListResponse } from '@/utils/listResponse';
 
 const emit = defineEmits<{
     success: [model: Model];
@@ -117,7 +118,7 @@ const vendorsLoading = ref(false);
 async function loadVendors() {
     vendorsLoading.value = true;
     try {
-        vendors.value = await listVendors();
+        vendors.value = normalizeListResponse(await listVendors()).list;
     } catch (error) {
         console.error('加载供应商列表失败:', error);
     } finally {

@@ -88,6 +88,7 @@ import { listModels } from '@/api/model';
 import type { Vendor } from '@/types/vendor';
 import type { Model } from '@/types/model';
 import { toAppRequestError } from '@/utils/requestError';
+import { normalizeListResponse } from '@/utils/listResponse';
 
 const visible = ref(false);
 const loading = ref(false);
@@ -154,7 +155,7 @@ async function open(vendor: Vendor) {
 async function loadVendorModels(vendorId: number) {
     modelsLoading.value = true;
     try {
-        const allModels = await listModels();
+        const allModels = normalizeListResponse(await listModels()).list;
         vendorModels.value = allModels.filter(m => m.vendor_id === vendorId);
         // 如果有模型，默认选中第一个
         if (vendorModels.value.length > 0) {

@@ -178,6 +178,7 @@ import { status } from '@/api/system';
 import { useStatsStore } from '@/stores/stats';
 import { useAutoRefresh } from '@/composables/useAutoRefresh';
 import { formatDate } from '@/utils/format';
+import { normalizeListResponse } from '@/utils/listResponse';
 import StatusCard from '@/components/common/StatusCard.vue';
 import StatisticCard from '@/components/common/StatisticCard.vue';
 import RecordTable from '@/components/common/RecordTable.vue';
@@ -274,10 +275,14 @@ async function loadSystemData() {
             status().catch(() => null),
         ]);
 
+        const normalizedUsers = normalizeListResponse(users);
+        const normalizedVendors = normalizeListResponse(vendors);
+        const normalizedModels = normalizeListResponse(models);
+
         systemStats.value = {
-            userCount: users.length,
-            vendorCount: vendors.length,
-            modelCount: models.length,
+            userCount: normalizedUsers.total,
+            vendorCount: normalizedVendors.total,
+            modelCount: normalizedModels.total,
             recordCount: systemStatusData?.statistics?.records || 0,
         };
 

@@ -66,19 +66,26 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, watch } from 'vue';
-import type { TableColumnsType, TablePaginationConfig } from 'ant-design-vue';
+import { watch } from 'vue';
+import type { TableColumnsType } from 'ant-design-vue';
 import { listRechargeRecords } from '@/api/billing';
-import { useTable } from '@/composables/useTable';
+import { useResourceTable } from '@/composables/useResourceTable';
 import type { RechargeRecord, RechargeRecordsQuery } from '@/types/billing';
 
 const props = defineProps<{
     selectedUserId?: number;
 }>();
 
-const { loading, data, pagination, searchForm, setPage, clearData } = useTable<RechargeRecord, RechargeRecordsQuery>(10, {
-    user_id: undefined,
-    type: undefined,
+const { loading, data, pagination, searchForm, loadData, handleSearch, handleReset, handleTableChange } = useResourceTable<RechargeRecord, RechargeRecordsQuery>({
+    initialSearchForm: {
+        user_id: undefined,
+        type: undefined,
+    },
+    fetcher: listRechargeRecords,
+    resetSearchForm: (form) => {
+        form.user_id = undefined;
+        form.type = undefined;
+    },
 });
 
 const columns: TableColumnsType<RechargeRecord> = [
@@ -91,56 +98,12 @@ const columns: TableColumnsType<RechargeRecord> = [
     { title: '时间', key: 'created_at', dataIndex: 'created_at', width: 180 },
 ];
 
-onMounted(() => {
-    loadData();
-});
-
 watch(() => props.selectedUserId, (newUserId) => {
     if (newUserId !== undefined) {
         searchForm.user_id = newUserId;
-        loadData();
+        void loadData();
     }
 });
-
-async function loadData() {
-    loading.value = true;
-    try {
-        const params: RechargeRecordsQuery = {};
-        if (searchForm.user_id) {
-            params.user_id = searchForm.user_id;
-        }
-        if (searchForm.type) {
-            params.type = searchForm.type;
-        }
-
-        const result = await listRechargeRecords(params);
-        data.value = result;
-        pagination.total = result.length;
-    } catch (error) {
-        console.error('加载充值记录失败:', error);
-    } finally {
-        loading.value = false;
-    }
-}
-
-function handleSearch() {
-    pagination.current = 1;
-    clearData();
-    loadData();
-}
-
-function handleReset() {
-    searchForm.user_id = undefined;
-    searchForm.type = undefined;
-    pagination.current = 1;
-    pagination.pageSize = 10;
-    clearData();
-    loadData();
-}
-
-function handleTableChange(pag: TablePaginationConfig) {
-    setPage(pag.current ?? 1, pag.pageSize ?? pagination.pageSize);
-}
 
 function formatDate(dateStr: string | number | null): string {
     if (!dateStr) return '-';

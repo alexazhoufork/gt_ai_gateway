@@ -21,6 +21,13 @@ export interface TablePaginationState extends TablePaginationConfig {
     pageSizeOptions: string[];
 }
 
+export interface ListResponse<T> {
+    list: T[];
+    total: number;
+}
+
+export type ListResult<T> = T[] | ListResponse<T>;
+
 export interface BaseEntity {
     id: number;
     created_at: Date;

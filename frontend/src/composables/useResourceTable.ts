@@ -1,10 +1,12 @@
 import { onMounted } from 'vue';
 import type { TablePaginationConfig } from 'ant-design-vue';
+import type { ListResult } from '@/types';
+import { normalizeListResponse } from '@/utils/listResponse';
 import { useTable } from './useTable';
 
 interface UseResourceTableOptions<T, TSearch extends object> {
     initialSearchForm: TSearch;
-    fetcher: (query: TSearch) => Promise<T[]>;
+    fetcher: (query: TSearch) => Promise<ListResult<T>>;
     resetSearchForm: (searchForm: TSearch) => void;
     defaultPageSize?: number;
     immediate?: boolean;
@@ -29,9 +31,9 @@ export function useResourceTable<T, TSearch extends object>(
     async function loadData(): Promise<void> {
         loading.value = true;
         try {
-            const result = await fetcher(searchForm as TSearch);
-            data.value = result;
-            pagination.total = result.length;
+            const result = normalizeListResponse(await fetcher(searchForm as TSearch));
+            data.value = result.list;
+            pagination.total = result.total;
         } finally {
             loading.value = false;
         }

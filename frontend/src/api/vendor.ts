@@ -1,4 +1,5 @@
 import request from '../utils/request';
+import type { ListResult } from '../types';
 import type { Vendor, CreateVendorRequest, UpdateVendorRequest } from '../types/vendor';
 import type { VendorQuery } from '../types/vendor';
 
@@ -11,7 +12,7 @@ export interface VendorTestResponse {
     error?: unknown;
 }
 
-export async function listVendors(params?: VendorQuery): Promise<Vendor[]> {
+export async function listVendors(params?: VendorQuery): Promise<ListResult<Vendor>> {
     return request.get('/vendor/list.json', { params });
 }
 
