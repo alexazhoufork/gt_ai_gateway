@@ -26,6 +26,14 @@ html, body {
     height: 100%;
 }
 
+body {
+    background: #f0f2f5;
+}
+
+html.dark body {
+    background: #141414;
+}
+
 #app {
     height: 100%;
 }
@@ -210,5 +218,37 @@ html, body {
 
 .app-container ::-webkit-scrollbar-corner {
     background: transparent;
+}
+
+.ant-message {
+    top: 24px;
+}
+
+.ant-message .ant-message-notice-wrapper {
+    padding: 6px 0;
+}
+
+.ant-message .ant-message-notice-content {
+    border-radius: 18px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+    color: #243247;
+    padding: 14px 18px;
+    backdrop-filter: blur(16px);
+}
+
+.ant-message .ant-message-custom-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+}
+
+html.dark .ant-message .ant-message-notice-content {
+    border-color: rgba(96, 165, 250, 0.18);
+    background: linear-gradient(180deg, rgba(39, 46, 58, 0.96) 0%, rgba(31, 37, 48, 0.98) 100%);
+    box-shadow: 0 22px 52px rgba(0, 0, 0, 0.46), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    color: rgba(255, 255, 255, 0.92);
 }
 </style>
