@@ -6,7 +6,10 @@
                 <a-card title="请求配置" :body-style="{ padding: '16px' }">
                     <a-form layout="vertical">
                         <a-form-item label="API 格式">
-                            <a-radio-group v-model:value="apiTestStore.config.format">
+                            <a-radio-group
+                                v-model:value="apiTestStore.config.format"
+                                name="api_format"
+                            >
                                 <a-radio-button value="openai">OpenAI</a-radio-button>
                                 <a-radio-button value="anthropic">Anthropic</a-radio-button>
                             </a-radio-group>
@@ -14,10 +17,12 @@
 
                         <a-form-item label="模型">
                             <a-select
+                                id="api-test-model"
                                 v-model:value="apiTestStore.config.model"
                                 placeholder="选择模型"
                                 :loading="modelsLoading"
                                 show-search
+                                :get-popup-container="getPopupContainer"
                             >
                                 <a-select-option
                                     v-for="model in models"
@@ -36,16 +41,20 @@
                                 class="message-item"
                             >
                                 <a-select
+                                    :id="`api-test-message-role-${index}`"
                                     v-model:value="msg.role"
                                     style="width: 100px"
                                     class="message-role"
+                                    :get-popup-container="getPopupContainer"
                                 >
                                     <a-select-option value="system">System</a-select-option>
                                     <a-select-option value="user">User</a-select-option>
                                     <a-select-option value="assistant">Assistant</a-select-option>
                                 </a-select>
                                 <a-textarea
+                                    :id="`api-test-message-content-${index}`"
                                     v-model:value="msg.content"
+                                    :name="`api_test_message_content_${index}`"
                                     :rows="2"
                                     placeholder="输入消息内容"
                                     class="message-content"
@@ -68,6 +77,7 @@
                             <a-col :span="12">
                                 <a-form-item label="Temperature">
                                     <a-slider
+                                        id="api-test-temperature"
                                         v-model:value="apiTestStore.config.temperature"
                                         :min="0"
                                         :max="2"
@@ -79,7 +89,9 @@
                             <a-col :span="12">
                                 <a-form-item label="Max Tokens">
                                     <a-input-number
+                                        id="api-test-max-tokens"
                                         v-model:value="apiTestStore.config.max_tokens"
+                                        name="api_test_max_tokens"
                                         :min="1"
                                         :max="8192"
                                         style="width: 100%"
@@ -181,8 +193,12 @@ const models = ref<Model[]>([]);
 const modelsLoading = ref(false);
 
 onMounted(() => {
-    loadModels();
+    void loadModels();
 });
+
+function getPopupContainer(node: HTMLElement): HTMLElement {
+    return node.parentElement ?? document.body;
+}
 
 async function loadModels() {
     modelsLoading.value = true;

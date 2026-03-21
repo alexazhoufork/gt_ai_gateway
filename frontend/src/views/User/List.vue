@@ -4,17 +4,21 @@
             <a-form layout="inline">
                 <a-form-item label="用户名">
                     <a-input
+                        id="user-search-keyword"
                         v-model:value="searchForm.keyword"
+                        name="user_search_keyword"
                         placeholder="搜索用户名"
                         allow-clear
                     />
                 </a-form-item>
                 <a-form-item label="类型">
                     <a-select
+                        id="user-search-type"
                         v-model:value="searchForm.type"
                         placeholder="全部"
                         style="width: 120px"
                         allow-clear
+                        :get-popup-container="getPopupContainer"
                     >
                         <a-select-option value="normal">普通用户</a-select-option>
                         <a-select-option value="admin">管理员</a-select-option>
@@ -140,6 +144,10 @@ function handleEdit(record: User) {
 
 function handleEditSuccess() {
     loadData();
+}
+
+function getPopupContainer(node: HTMLElement): HTMLElement {
+    return node.parentElement ?? document.body;
 }
 </script>
 

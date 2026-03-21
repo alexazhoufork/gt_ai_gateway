@@ -1,10 +1,13 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { status } from '@/api/system';
+import packageJson from '../../package.json';
+
+const FALLBACK_VERSION = packageJson.version;
 
 export const useAppStore = defineStore('app', () => {
     const sidebarCollapsed = ref(false);
-    const version = ref('');
+    const version = ref(FALLBACK_VERSION);
 
     function toggleSidebar() {
         sidebarCollapsed.value = !sidebarCollapsed.value;
@@ -13,7 +16,7 @@ export const useAppStore = defineStore('app', () => {
     async function fetchVersion() {
         try {
             const data = await status();
-            version.value = data.system?.version || '';
+            version.value = data.system?.version || FALLBACK_VERSION;
         } catch (error) {
             console.error('Failed to fetch version:', error);
         }
