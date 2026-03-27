@@ -11,6 +11,8 @@ export interface ParsedPagination {
     offset: number;
 }
 
+export const MAX_PAGE_SIZE = 100;
+
 function parsePositiveInt(value: string | undefined): number | undefined {
     if (!value) {
         return undefined;
@@ -40,11 +42,13 @@ function parseNonNegativeInt(value: string | undefined): number | undefined {
 export function parsePaginationQuery(
     query: PaginationQuery,
     defaultPageSize: number = 10,
+    maxPageSize: number = MAX_PAGE_SIZE,
 ): ParsedPagination {
     const page = parsePositiveInt(query.page) ?? 1;
-    const pageSize = parsePositiveInt(query.pageSize)
+    const rawPageSize = parsePositiveInt(query.pageSize)
         ?? parsePositiveInt(query.limit)
         ?? defaultPageSize;
+    const pageSize = Math.min(rawPageSize, maxPageSize);
     const offset = parseNonNegativeInt(query.offset) ?? (page - 1) * pageSize;
 
     return {

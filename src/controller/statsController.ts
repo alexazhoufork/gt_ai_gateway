@@ -2,6 +2,7 @@ import { Context } from "hono";
 import { SgRecord } from "../model/sgRecord";
 import { SgRecordStatus } from "../constants";
 import ormService from "../service/ormService";
+import { parsePaginationQuery } from "../util/pagination";
 
 function toSafeNumber(value: unknown): number {
     const parsed = Number(value);
@@ -47,12 +48,12 @@ async function dashboardStats(c: Context) {
 }
 
 async function recentRecords(c: Context) {
-    const { limit = '10' } = c.req.query();
-    const limitNumber = parseInt(limit, 10);
+    const query = c.req.query();
+    const { pageSize } = parsePaginationQuery(query, 10);
 
     const records = await SgRecord.query()
         .orderBy('id', 'desc')
-        .limit(limitNumber)
+        .limit(pageSize)
         .get();
 
     // 简化返回数据

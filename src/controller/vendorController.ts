@@ -140,8 +140,8 @@ async function deleteVendor(c: Context) {
     }
 
     // 检查是否有关联的模型
-    const models = await SgModel.query().where("vendor_id", vendorId).get();
-    if (models.length > 0) {
+    const relatedModelCount = Number(await SgModel.query().where("vendor_id", vendorId).count() || 0);
+    if (relatedModelCount > 0) {
         throw new customError.AppError("Cannot delete vendor with associated models");
     }
 
