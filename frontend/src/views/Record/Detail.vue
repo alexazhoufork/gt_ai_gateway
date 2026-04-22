@@ -160,7 +160,7 @@ function navigateToRecord(targetId: number) {
 }
 
 function handleBack() {
-    router.back();
+    void router.push({ name: 'RecordList' });
 }
 
 onUnmounted(() => {
