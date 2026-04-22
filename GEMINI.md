@@ -46,6 +46,14 @@
 ## 工作技巧
 1. 在执行单条测试用例的时候（如果日志不是特多），不要用 grep 过滤日志，直接查看整个用例的全部输出，这样更容易定位问题
 
+## 本地数据与日志
+1. 本地 Node 模式运行时，业务数据默认存放在项目根目录的 `local.db`
+2. 本地日志默认存放在 `log/` 目录下
+    1. 应用日志通常在 `log/app-YYYY-MM-DD.log`
+    2. 测试日志通常在 `log/test/`
+    3. 如果启用原始流日志，会写到 `log/stream/`
+3. `local.db` 和 `log/` 已加入 `.gitignore`。因此 agent 在默认文件上下文里可能看不到这些文件，需要使用 bash 工具显式读取，例如 `ls log`、`tail -n 200 log/test/app.log`、`sqlite3 local.db ...`
+
 ## Git 提交规范
 1. **禁止提交本地数据和工具配置文件**：在执行 `git commit` 前，务必检查并排除以下内容：
     - **本地数据库**：`local.db`、`test.db` 等
