@@ -40,8 +40,12 @@ class SgVendor extends Model {
         let url = urls[format];
 
         if (!url) {
-            // Try to get default URL from config
-            url = vendorDefaultUrls.getDefaultUrl(this.type, format);
+            // Responses API falls back to the openai base URL
+            if (format === ApiFormat.RESPONSES) {
+                url = urls[ApiFormat.OPENAI] ?? vendorDefaultUrls.getDefaultUrl(this.type, ApiFormat.OPENAI);
+            } else {
+                url = vendorDefaultUrls.getDefaultUrl(this.type, format);
+            }
         }
 
         if (!url) {
@@ -55,6 +59,10 @@ class SgVendor extends Model {
         
         if (format === ApiFormat.OPENAI && !url.includes("/chat/completions")) {
             url = url.replace(/\/$/, "") + "/chat/completions";
+        }
+
+        if (format === ApiFormat.RESPONSES && !url.includes("/responses")) {
+            url = url.replace(/\/$/, "") + "/responses";
         }
 
         return url;

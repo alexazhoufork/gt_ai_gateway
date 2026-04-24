@@ -221,6 +221,128 @@ async function handleNonStreamResponse(
 }
 
 
+async function handleResponsesStreamResponse(
+    c: Context,
+    upstreamRes: Response,
+    record: SgRecord,
+    model: SgModel,
+    user: SgUser,
+): Promise<Response> {
+    let firstTokenTime: number | null = null;
+
+    return streamSSE(c, async (stream: SSEStreamingApi) => {
+        const reader = upstreamRes.body!.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+
+            const events = buffer.split("\n\n");
+            buffer = events.pop() ?? "";
+
+            for (const event of events) {
+                if (!event.trim()) continue;
+
+                const lines = event.split("\n");
+                let data = "";
+                let eventType = "";
+                for (const line of lines) {
+                    if (line.startsWith("data:")) {
+                        data = line.slice(5).trim();
+                    } else if (line.startsWith("event:")) {
+                        eventType = line.slice(6).trim();
+                    }
+                }
+
+                if (!data) continue;
+
+                if (firstTokenTime === null && eventType === "response.output_text.delta") {
+                    firstTokenTime = Date.now();
+                }
+
+                await stream.writeSSE({ data, event: eventType || undefined });
+
+                // response.completed 包含完整 usage
+                if (eventType === "response.completed") {
+                    try {
+                        const parsed = JSON.parse(data);
+                        const usage = parsed?.response?.usage;
+                        const promptTokens = usage?.input_tokens ?? 0;
+                        const outputTokens = usage?.output_tokens ?? 0;
+                        const cost = calculateCost(model, promptTokens, outputTokens);
+
+                        await recordService.update(record.id, {
+                            response_data: JSON.stringify(parsed.response),
+                            status: SgRecordStatus.SUCCESS,
+                            prompt_tokens: promptTokens,
+                            output_tokens: outputTokens,
+                            first_token_latency: firstTokenTime !== null
+                                ? firstTokenTime - record.created_at.getTime()
+                                : null,
+                            end_at: new Date(),
+                            cost,
+                        });
+
+                        if (user.type !== "root") {
+                            await userService.deductBalance(user.id, cost);
+                        }
+                    } catch (e) {
+                        console.log("Failed to parse response.completed:", e);
+                    }
+                }
+            }
+        }
+    });
+}
+
+
+async function handleResponsesNonStreamResponse(
+    c: Context,
+    upstreamRes: Response,
+    record: SgRecord,
+    model: SgModel,
+    user: SgUser,
+): Promise<Response> {
+    const responseText = await upstreamRes.text();
+    const statusCode = upstreamRes.status as StatusCode;
+
+    let promptTokens: number | null = null;
+    let outputTokens: number | null = null;
+    try {
+        const responseJson = JSON.parse(responseText);
+        promptTokens = responseJson.usage?.input_tokens ?? null;
+        outputTokens = responseJson.usage?.output_tokens ?? null;
+    } catch (e) {
+        console.log("Failed to parse responses API response:", e);
+    }
+
+    const finalPromptTokens = promptTokens ?? 0;
+    const finalOutputTokens = outputTokens ?? 0;
+    const cost = calculateCost(model, finalPromptTokens, finalOutputTokens);
+
+    await recordService.update(record.id, {
+        response_data: responseText,
+        status: statusCode === 200 ? SgRecordStatus.SUCCESS : SgRecordStatus.FAILED,
+        prompt_tokens: promptTokens,
+        output_tokens: outputTokens,
+        end_at: new Date(),
+        cost,
+    });
+
+    if (user.type !== "root" && statusCode === 200) {
+        await userService.deductBalance(user.id, cost);
+    }
+
+    c.status(statusCode);
+    c.res.headers.set("Content-Type", "application/json");
+    return c.text(responseText);
+}
+
+
 async function sendRequest(
     c: Context,
     user: SgUser,
@@ -324,6 +446,14 @@ async function sendRequest(
         upstreamRes.headers.get("content-type")?.startsWith("text/event-stream");
 
     // 4. 按响应类型分发处理
+    if (format === ApiFormat.RESPONSES) {
+        if (isStream) {
+            return handleResponsesStreamResponse(c, upstreamRes, record, modelConfig, user);
+        } else {
+            return handleResponsesNonStreamResponse(c, upstreamRes, record, modelConfig, user);
+        }
+    }
+
     if (isStream) {
         return handleStreamResponse(c, upstreamRes, record, modelConfig, user, format);
     } else {

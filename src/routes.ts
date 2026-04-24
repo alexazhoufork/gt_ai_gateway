@@ -110,6 +110,7 @@ app.get("/stats/recent.json", authMiddleware.requireAdmin, statsController.recen
 // AI endpoints (no auth middleware)
 app.post("/llm/v1/chat/completions", gatewayController.chatCompletions);
 app.post("/llm/v1/messages", gatewayController.anthropicMessages);
+app.post("/llm/v1/responses", gatewayController.responsesApi);
 
 // SPA fallback - serve index.html for all non-API routes
 // This handles frontend routes like /dashboard, /vendor, etc.

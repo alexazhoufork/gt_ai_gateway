@@ -12,8 +12,9 @@
 | **doc/DockerDeployment.md** | Docker 部署文档，包含 Docker Compose、直接构建运行等 |
 | **doc/TestManual.md** | 测试手册，描述测试环境的架构设计和操作流程 |
 | **doc/LlmApiUsage.md** | LLM API 使用指南，介绍如何调用网关提供的 LLM 接口 |
-| **doc/OpenAiProtocol.md** | OpenAI 协议说明文档 |
-| **doc/AnthropicProtocol.md** | Anthropic 协议说明文档 |
+| **doc/protocol/OpenAiProtocol.md** | OpenAI Chat Completions 协议说明文档 |
+| **doc/protocol/OpenAiResponsesProtocol.md** | OpenAI Responses API 协议说明文档 |
+| **doc/protocol/AnthropicProtocol.md** | Anthropic 协议说明文档 |
 | **doc/StreamLogging.md** | 流式日志相关说明 |
 | **doc/design/frontend/Frontend_Product_Documentation.md** | 前端产品文档总览 |
 | **doc/design/frontend/Frontend_Roadmap.md** | 前端路线图 |

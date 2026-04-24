@@ -112,7 +112,40 @@ async function anthropicMessages(c: Context) {
     return sender.sendRequest(c, user, modelConfig, vendor, ApiFormat.ANTHROPIC, body);
 }
 
+async function responsesApi(c: Context) {
+    let body: string = await c.req.text();
+
+    const authHeader = c.req.header("Authorization");
+    if (!authHeader) {
+        return c.json({ error: "Authorization header is missing" }, 401);
+    }
+    if (!authHeader.startsWith("Bearer ")) {
+        return c.json({ error: "Invalid token format" }, 401);
+    }
+
+    const token = authHeader.split(" ")[1];
+    const user = await userService.getUserByToken(token!, c.env.ROOT_TOKEN);
+    if (user == null) {
+        return c.json({ error: "Invalid token (user not found)" }, 401);
+    }
+
+    let bodyDict = JSON.parse(body);
+    const modelName = bodyDict.model;
+    const modelConfig: SgModel | null = await modelService.getModel(modelName, true);
+    if (modelConfig == null) {
+        return c.json({ error: "model not found" }, 401);
+    }
+
+    const vendor: SgVendor | null = await SgVendor.query().find(modelConfig!.vendor_id!);
+    if (vendor == null) {
+        return c.json({ error: "vendor not found" }, 401);
+    }
+
+    return sender.sendRequest(c, user!, modelConfig!, vendor!, ApiFormat.RESPONSES, body);
+}
+
 export default {
     chatCompletions,
     anthropicMessages,
+    responsesApi,
 };
