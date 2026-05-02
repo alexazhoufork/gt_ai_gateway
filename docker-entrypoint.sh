@@ -12,10 +12,10 @@ mkdir -p $(dirname "$DB_PATH")
 # 检查数据库文件是否存在，如果不存在则自动创建并执行初始化
 if [ ! -f "$DB_PATH" ]; then
     echo "Database file not found. Initializing new database..."
-    npm run db:init:local
+    npm run db:init:node
 else
     echo "Database file exists. Running migrations..."
-    npm run db:migrate:local
+    npm run db:migrate:node
 fi
 
 # 启动应用
