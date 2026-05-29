@@ -9,6 +9,13 @@ import packageJson from "../../package.json";
 // 当前实例的启动时间（延迟初始化，避免 Workers 模块加载时日期异常）
 let INSTANCE_START_TIME: Date | null = null;
 
+function getEnvironmentName(): string {
+    if (ormService.mode === "worker") return "Cloudflare Workers";
+    if (process.env.DESKTOP_MODE) return "Desktop App";
+    return "Node";
+}
+
+
 function getInstanceStartTime(): Date {
     if (!INSTANCE_START_TIME) {
         INSTANCE_START_TIME = new Date();
@@ -63,7 +70,7 @@ async function status(c: Context) {
                 records: recordCount,
             },
             system: {
-                environment: ormService.mode === "worker" ? "Cloudflare Workers" : "Node",
+                environment: getEnvironmentName(),
                 version: packageJson.version,
                 startTime: startTime.toISOString(),
                 uptime: formatUptime(startTime),

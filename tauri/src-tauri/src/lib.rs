@@ -152,7 +152,8 @@ pub fn run() {
                .env("PORT", config.port.to_string())
                .env("HOST", &config.host)
                .env("LOG_DIR", log_dir.to_str().unwrap())
-               .env("ROOT_TOKEN", &config.root_token);
+               .env("ROOT_TOKEN", &config.root_token)
+               .env("DESKTOP_MODE", "1");
 
             // pre_exec：在 fork 之后、exec 之前在子进程中执行
             unsafe {
