@@ -107,7 +107,7 @@ function toggleTheme() {
     justify-content: space-between;
     align-items: center;
     padding: 0 24px;
-    height: 64px;
+    height: 48px;
     background: var(--bg-header);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     position: relative;
@@ -121,13 +121,13 @@ function toggleTheme() {
 }
 
 .logo {
-    width: 32px;
-    height: 32px;
+    width: 26px;
+    height: 26px;
     object-fit: contain;
 }
 
 .title {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
     color: var(--text-primary);
 }
