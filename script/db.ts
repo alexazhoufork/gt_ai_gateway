@@ -444,3 +444,5 @@ async function main() {
 if (require.main === module) {
     main();
 }
+
+export default { migrate, LocalDBAdapter, MIGRATION_DIR };

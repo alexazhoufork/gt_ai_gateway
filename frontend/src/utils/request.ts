@@ -12,6 +12,14 @@ const instance: AxiosInstance = axios.create({
     },
 });
 
+/**
+ * 在 Tauri 环境下，运行时动态更新 baseURL。
+ * 由 main.ts 在应用初始化时调用一次。
+ */
+export function setBaseURL(url: string) {
+    instance.defaults.baseURL = url;
+}
+
 instance.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
         const token = getAuthToken();

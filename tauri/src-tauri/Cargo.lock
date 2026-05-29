@@ -21,6 +21,7 @@ dependencies = [
 name = "ai-gateway"
 version = "1.4.7"
 dependencies = [
+ "open",
  "serde",
  "serde_json",
  "tauri",

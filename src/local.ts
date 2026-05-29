@@ -132,12 +132,15 @@ async function startServer() {
     // Static file serving for assets only (JS, CSS)
     app.use("/assets/*", serveStatic({ root: distPath }));
 
+    const hostname = process.env.HOST || "127.0.0.1";
+
     serve({
         fetch: (request) => app.fetch(request, bindings),
         port,
+        hostname,
     });
 
-    console.log(`Server listening on http://localhost:${port}`);
+    console.log(`Server listening on http://${hostname}:${port}`);
     console.log(`ROOT_TOKEN: ${bindings.ROOT_TOKEN}`);
 }
 

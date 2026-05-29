@@ -1,6 +1,7 @@
 import { sutando } from "sutando";
 import { DatabaseAdapter, D1Adapter, SQLiteAdapter } from "./dbAdapter";
 import customError from "../util/customError";
+import dbScript from "../../script/db";
 
 interface ORMOptions {
     mode: "worker" | "node";
@@ -33,6 +34,10 @@ class ORMService {
 
             const db = new Database(dbPath);
             this._dbAdapter = new SQLiteAdapter(db);
+
+            const migrateAdapter = new dbScript.LocalDBAdapter(dbPath);
+            await dbScript.migrate(migrateAdapter, "node");
+            migrateAdapter.close();
         }
 
         return this._dbAdapter;
