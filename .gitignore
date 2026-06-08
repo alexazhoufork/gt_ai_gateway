@@ -35,6 +35,9 @@ lerna-debug.log*
 .idea
 .claude/
 
+# build
+.fingerprint
+
 # test config (contains API keys)
 tests/resource/test_real_config.json
 
