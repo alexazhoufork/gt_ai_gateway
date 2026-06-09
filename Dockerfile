@@ -72,6 +72,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 # 设置环境变量
 ENV NODE_ENV=production \
     PORT=8787 \
+    HOST=0.0.0.0 \
     DB_PATH=/app/data/local.db \
     LOG_DIR=/app/data/log
 
