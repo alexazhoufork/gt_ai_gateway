@@ -4,6 +4,7 @@ import { StatusCode } from "hono/dist/types/utils/http-status";
 import { streamSSE, SSEStreamingApi } from "hono/streaming";
 import { SgUser } from "../model/sgUser";
 import { SgVendor } from "../model/sgVendor";
+import { SgVendorModel } from "../model/sgVendorModel";
 import recordService from "./recordService";
 import ormService from "./ormService";
 import { SgRecordStatus, ApiFormat } from "../constants";
@@ -440,8 +441,22 @@ async function sendRequest(
     // 强制设置 content-type
     finalHeaders.set("Content-Type", "application/json");
 
-    // 3. OpenAI 流式请求注入 stream_options，让上游在最后一帧返回 usage
+    // 3. 替换上游模型名：若 model 配置了 vendor_model_id，用对应的 vendor_model.model_id 替换请求体中的 model 字段
     let upstreamBody = body;
+    if (modelConfig.vendor_model_id) {
+        const vendorModel = await SgVendorModel.query().find(modelConfig.vendor_model_id);
+        if (vendorModel) {
+            try {
+                const bodyJson = JSON.parse(upstreamBody);
+                bodyJson.model = vendorModel.model_id;
+                upstreamBody = JSON.stringify(bodyJson);
+            } catch (e) {
+                console.log("[senderService] Failed to substitute model name:", e);
+            }
+        }
+    }
+
+    // 4. OpenAI 流式请求注入 stream_options，让上游在最后一帧返回 usage
     if (format === ApiFormat.OPENAI) {
         try {
             const bodyJson = JSON.parse(body);

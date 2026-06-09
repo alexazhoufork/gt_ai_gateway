@@ -20,6 +20,7 @@
                     v-model:value="formState.vendor_id"
                     placeholder="请选择供应商"
                     :loading="vendorsLoading"
+                    @change="handleVendorChange"
                 >
                     <a-select-option
                         v-for="vendor in vendors"
@@ -27,6 +28,23 @@
                         :value="vendor.id"
                     >
                         {{ vendor.name }}
+                    </a-select-option>
+                </a-select>
+            </a-form-item>
+            <a-form-item label="上游模型" name="vendor_model_id">
+                <a-select
+                    v-model:value="formState.vendor_model_id"
+                    placeholder="不指定（使用模型名称）"
+                    :loading="vendorModelsLoading"
+                    allow-clear
+                    :disabled="!formState.vendor_id"
+                >
+                    <a-select-option
+                        v-for="vm in vendorModels"
+                        :key="vm.id"
+                        :value="vm.id"
+                    >
+                        {{ vm.model_id }}
                     </a-select-option>
                 </a-select>
             </a-form-item>
@@ -41,9 +59,9 @@
 import { ref, reactive } from 'vue';
 import type { FormInstance } from 'ant-design-vue/es';
 import { createModel } from '@/api/model';
-import { listVendors } from '@/api/vendor';
+import { listVendors, listVendorModels } from '@/api/vendor';
 import type { Model } from '@/types/model';
-import type { Vendor as VendorType } from '@/types/vendor';
+import type { Vendor as VendorType, VendorModel } from '@/types/vendor';
 import { normalizeListResponse } from '@/utils/listResponse';
 import { notifyError, notifyRequestError, notifySuccess } from '@/utils/requestFeedback';
 
@@ -58,6 +76,7 @@ const formRef = ref<FormInstance>();
 const formState = reactive({
     name: '',
     vendor_id: undefined as number | undefined,
+    vendor_model_id: undefined as number | undefined,
     enable: true,
 });
 
@@ -68,6 +87,8 @@ const rules = {
 
 const vendors = ref<VendorType[]>([]);
 const vendorsLoading = ref(false);
+const vendorModels = ref<VendorModel[]>([]);
+const vendorModelsLoading = ref(false);
 
 async function loadVendors() {
     vendorsLoading.value = true;
@@ -80,6 +101,25 @@ async function loadVendors() {
     }
 }
 
+async function loadVendorModels(vendorId: number) {
+    vendorModelsLoading.value = true;
+    try {
+        vendorModels.value = await listVendorModels(vendorId);
+    } catch (error) {
+        vendorModels.value = [];
+    } finally {
+        vendorModelsLoading.value = false;
+    }
+}
+
+function handleVendorChange(vendorId: number) {
+    formState.vendor_model_id = undefined;
+    vendorModels.value = [];
+    if (vendorId) {
+        void loadVendorModels(vendorId);
+    }
+}
+
 function open() {
     void loadVendors();
     visible.value = true;
@@ -89,7 +129,6 @@ async function handleOk() {
     try {
         await formRef.value?.validate();
         loading.value = true;
-        // 确保 vendor_id 不为空（表单验证应该已经保证）
         if (formState.vendor_id === undefined) {
             notifyError('请选择供应商');
             return;
@@ -98,6 +137,7 @@ async function handleOk() {
             name: formState.name,
             vendor_id: formState.vendor_id,
             enable: formState.enable,
+            vendor_model_id: formState.vendor_model_id ?? null,
         });
         notifySuccess('创建成功');
         emit('success', model);
@@ -113,7 +153,9 @@ function handleCancel() {
     visible.value = false;
     formState.name = '';
     formState.vendor_id = undefined;
+    formState.vendor_model_id = undefined;
     formState.enable = true;
+    vendorModels.value = [];
 }
 
 defineExpose({ open });

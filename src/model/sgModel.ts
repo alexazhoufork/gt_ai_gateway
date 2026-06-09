@@ -7,7 +7,8 @@ class SgModel extends Model {
     id!: number;
 
     name!: string | null;
-    vendor_id!: number | null; // vendor id
+    vendor_id!: number | null;
+    vendor_model_id!: number | null;
     enable!: boolean;
     input_price!: number;
     output_price!: number;

@@ -20,6 +20,7 @@
                     v-model:value="formState.vendor_id"
                     placeholder="请选择供应商"
                     :loading="vendorsLoading"
+                    @change="handleVendorChange"
                 >
                     <a-select-option
                         v-for="vendor in vendors"
@@ -27,6 +28,23 @@
                         :value="vendor.id"
                     >
                         {{ vendor.name }}
+                    </a-select-option>
+                </a-select>
+            </a-form-item>
+            <a-form-item label="上游模型" name="vendor_model_id">
+                <a-select
+                    v-model:value="formState.vendor_model_id"
+                    placeholder="不指定（使用模型名称）"
+                    :loading="vendorModelsLoading"
+                    allow-clear
+                    :disabled="!formState.vendor_id"
+                >
+                    <a-select-option
+                        v-for="vm in vendorModels"
+                        :key="vm.id"
+                        :value="vm.id"
+                    >
+                        {{ vm.model_id }}
                     </a-select-option>
                 </a-select>
             </a-form-item>
@@ -86,9 +104,9 @@ import { ref, reactive } from 'vue';
 import type { FormInstance } from 'ant-design-vue/es';
 import { InfoCircleOutlined } from '@ant-design/icons-vue';
 import { updateModel } from '@/api/model';
-import { listVendors } from '@/api/vendor';
+import { listVendors, listVendorModels } from '@/api/vendor';
 import type { Model } from '@/types/model';
-import type { Vendor as VendorType } from '@/types/vendor';
+import type { Vendor as VendorType, VendorModel } from '@/types/vendor';
 import { normalizeListResponse } from '@/utils/listResponse';
 import { notifyRequestError, notifySuccess } from '@/utils/requestFeedback';
 
@@ -106,6 +124,7 @@ const currentId = ref<number>(0);
 const formState = reactive({
     name: '',
     vendor_id: undefined as number | undefined,
+    vendor_model_id: undefined as number | undefined,
     enable: true,
     input_price: 0,
     output_price: 0,
@@ -118,6 +137,8 @@ const rules = {
 
 const vendors = ref<VendorType[]>([]);
 const vendorsLoading = ref(false);
+const vendorModels = ref<VendorModel[]>([]);
+const vendorModelsLoading = ref(false);
 
 async function loadVendors() {
     vendorsLoading.value = true;
@@ -130,14 +151,37 @@ async function loadVendors() {
     }
 }
 
+async function loadVendorModels(vendorId: number) {
+    vendorModelsLoading.value = true;
+    try {
+        vendorModels.value = await listVendorModels(vendorId);
+    } catch (error) {
+        vendorModels.value = [];
+    } finally {
+        vendorModelsLoading.value = false;
+    }
+}
+
+function handleVendorChange(vendorId: number) {
+    formState.vendor_model_id = undefined;
+    vendorModels.value = [];
+    if (vendorId) {
+        void loadVendorModels(vendorId);
+    }
+}
+
 function open(model: Model) {
     formState.name = model.name;
     formState.vendor_id = model.vendor_id;
-    formState.enable = Boolean(model.enable); // Convert number to boolean
+    formState.vendor_model_id = model.vendor_model_id ?? undefined;
+    formState.enable = Boolean(model.enable);
     formState.input_price = model.input_price;
     formState.output_price = model.output_price;
     currentId.value = model.id;
     void loadVendors();
+    if (model.vendor_id) {
+        void loadVendorModels(model.vendor_id);
+    }
     visible.value = true;
 }
 
@@ -145,7 +189,10 @@ async function handleOk() {
     try {
         await formRef.value?.validate();
         loading.value = true;
-        const model = await updateModel(currentId.value, formState);
+        const model = await updateModel(currentId.value, {
+            ...formState,
+            vendor_model_id: formState.vendor_model_id ?? null,
+        });
         notifySuccess('更新成功');
         emit('success', model);
         handleCancel();
@@ -160,9 +207,11 @@ function handleCancel() {
     visible.value = false;
     formState.name = '';
     formState.vendor_id = undefined;
+    formState.vendor_model_id = undefined;
     formState.enable = true;
     formState.input_price = 0;
     formState.output_price = 0;
+    vendorModels.value = [];
 }
 
 defineExpose({ open });

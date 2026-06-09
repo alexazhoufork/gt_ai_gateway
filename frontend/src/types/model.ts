@@ -3,6 +3,7 @@ import type { BaseEntity, TableQuery } from './index';
 export interface Model extends BaseEntity {
     name: string;
     vendor_id: number;
+    vendor_model_id: number | null;
     enable: boolean;
     input_price: number;
     output_price: number;
@@ -14,6 +15,7 @@ export interface CreateModelRequest {
     enable?: boolean;
     input_price?: number;
     output_price?: number;
+    vendor_model_id?: number | null;
 }
 
 export interface UpdateModelRequest {
@@ -22,6 +24,7 @@ export interface UpdateModelRequest {
     enable?: boolean;
     input_price?: number;
     output_price?: number;
+    vendor_model_id?: number | null;
 }
 
 export interface ModelQuery extends TableQuery {
