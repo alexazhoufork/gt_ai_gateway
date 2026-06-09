@@ -61,6 +61,6 @@ jobs:
         with:
           name: macOS-app
           path: |
-            tauri/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
-            tauri/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app
+            tauri/build/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+            tauri/build/target/aarch64-apple-darwin/release/bundle/macos/*.app
           if-no-files-found: warn
