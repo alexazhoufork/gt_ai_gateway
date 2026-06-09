@@ -120,6 +120,7 @@ const columns: TableColumnsType<Vendor> = [
     { title: 'ID', key: 'id', dataIndex: 'id', width: 80 },
     { title: '类型', key: 'type', dataIndex: 'type', width: 120 },
     { title: '名称', key: 'name', dataIndex: 'name' },
+    { title: '模型数量', key: 'model_count', dataIndex: 'model_count', width: 100 },
     { title: '创建时间', key: 'created_at', dataIndex: 'created_at', width: 180 },
     { title: '操作', key: 'action', width: 180, fixed: 'right' as const },
 ];

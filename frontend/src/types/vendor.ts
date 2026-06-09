@@ -11,6 +11,7 @@ export interface Vendor extends BaseEntity {
     name: string;
     token: string;
     urls: VendorUrls;
+    model_count: number;
 }
 
 export interface CreateVendorRequest {
