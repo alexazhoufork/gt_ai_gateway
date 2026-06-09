@@ -1,9 +1,9 @@
 import { Context } from "hono";
-import { sutando } from "sutando";
 import { SgVendor } from "../model/sgVendor";
 import { SgModel } from "../model/sgModel";
 import vendorService from "../service/vendorService";
 import vendorDefaultUrls from "../service/vendorDefaultUrls";
+import ormService from "../service/ormService";
 import customError from "../util/customError";
 import { ApiFormat } from "../constants";
 import { createListResponse, parsePaginationQuery } from "../util/pagination";
@@ -43,13 +43,12 @@ async function listVendors(c: Context) {
     const vendors = await dbQuery.limit(pageSize).offset(offset).get();
 
     // Single GROUP BY COUNT query for this page's vendor IDs
-    const vendorIds = vendors.map(v => v.id);
+    const vendorIds: number[] = (vendors as any).all().map((v: SgVendor) => v.id);
     const countMap = new Map<number, number>();
     if (vendorIds.length > 0) {
-        const rows: { vendor_id: number; cnt: number }[] = await sutando
-            .table("vendor_model")
-            .select("vendor_id")
-            .count("* as cnt")
+        const knex = ormService.getKnex();
+        const rows: { vendor_id: number; cnt: number }[] = await knex("vendor_model")
+            .select(["vendor_id", knex.raw("count(*) as cnt")])
             .whereIn("vendor_id", vendorIds)
             .groupBy("vendor_id");
         rows.forEach(row => {

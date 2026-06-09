@@ -161,6 +161,11 @@ class ORMService {
         }
         return this._dbAdapter;
     }
+
+    getKnex(): any {
+        const queryBuilder = (sutando as any).connection();
+        return (queryBuilder as any).connector;
+    }
 }
 
 const ormService = new ORMService();

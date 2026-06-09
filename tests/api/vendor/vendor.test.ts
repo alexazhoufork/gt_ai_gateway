@@ -124,8 +124,31 @@ describe("Vendor API (Positive)", () => {
             expect(vendor).toHaveProperty("urls");
             expect(vendor).toHaveProperty("name");
             expect(vendor).toHaveProperty("token");
+            expect(vendor).toHaveProperty("model_count");
             expect(vendor).toHaveProperty("created_at");
             expect(vendor).toHaveProperty("updated_at");
+        });
+
+        it("should reflect correct model_count after adding vendor models", async () => {
+            // Add 2 vendor models to the created vendor
+            const add1 = await requestHelper.post(
+                `/vendor/${createdVendorId}/model/add.json`,
+                { model_id: "test-model-1" },
+                adminToken,
+            );
+            expect(add1.status).toBe(200);
+            const add2 = await requestHelper.post(
+                `/vendor/${createdVendorId}/model/add.json`,
+                { model_id: "test-model-2" },
+                adminToken,
+            );
+            expect(add2.status).toBe(200);
+
+            const response = await requestHelper.get("/vendor/list.json", adminToken);
+            const vendor = response.body.list.find((v: any) => v.id === createdVendorId);
+
+            expect(vendor).toBeDefined();
+            expect(vendor.model_count).toBe(2);
         });
 
         it("should include different API formats", async () => {
