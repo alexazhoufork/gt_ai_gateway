@@ -36,6 +36,22 @@ export async function deleteVendor(id: number): Promise<{ success: boolean }> {
     return request.delete(`/vendor/${id}`);
 }
 
+export async function listVendorModels(vendorId: number): Promise<import('../types/vendor').VendorModel[]> {
+    return request.get(`/vendor/${vendorId}/model/list.json`);
+}
+
+export async function fetchVendorModels(vendorId: number): Promise<{ models: string[] }> {
+    return request.get(`/vendor/${vendorId}/model/fetch.json`);
+}
+
+export async function syncVendorModels(vendorId: number, modelIds: string[]): Promise<import('../types/vendor').VendorModel[]> {
+    return request.post(`/vendor/${vendorId}/model/sync.json`, { model_ids: modelIds });
+}
+
+export async function deleteVendorModel(vendorId: number, id: number): Promise<{ success: boolean }> {
+    return request.delete(`/vendor/${vendorId}/model/${id}`);
+}
+
 export async function testVendor(
     id: number,
     format: string = 'openai',

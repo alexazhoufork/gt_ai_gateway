@@ -6,6 +6,7 @@ import gatewayController from "./controller/gatewayController";
 import modelController from "./controller/modelController";
 import userController from "./controller/userController";
 import vendorController from "./controller/vendorController";
+import vendorModelController from "./controller/vendorModelController";
 import recordController from "./controller/recordController";
 import systemController from "./controller/systemController";
 import statsController from "./controller/statsController";
@@ -77,9 +78,13 @@ app.get("/status.json", authMiddleware.requireAdmin, systemController.status);
 // Vendor (需要管理员权限)
 app.get("/vendor/list.json", authMiddleware.requireAdmin, vendorController.listVendors);
 app.post("/vendor/batch.json", authMiddleware.requireAdmin, vendorController.getVendorsByIds);
+app.post("/vendor/create.json", authMiddleware.requireAdmin, vendorController.createVendor);
+app.get("/vendor/:id/model/list.json", authMiddleware.requireAdmin, vendorModelController.listVendorModels);
+app.get("/vendor/:id/model/fetch.json", authMiddleware.requireAdmin, vendorModelController.fetchVendorModels);
+app.post("/vendor/:id/model/sync.json", authMiddleware.requireAdmin, vendorModelController.syncVendorModels);
+app.delete("/vendor/:id/model/:modelId", authMiddleware.requireAdmin, vendorModelController.deleteVendorModel);
 app.get("/vendor/:id", authMiddleware.requireAdmin, vendorController.getVendor);
 app.post("/vendor/:id/test.json", authMiddleware.requireAdmin, vendorController.testVendor);
-app.post("/vendor/create.json", authMiddleware.requireAdmin, vendorController.createVendor);
 app.put("/vendor/:id", authMiddleware.requireAdmin, vendorController.updateVendor);
 app.delete("/vendor/:id", authMiddleware.requireAdmin, vendorController.deleteVendor);
 

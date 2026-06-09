@@ -63,6 +63,9 @@
                         <a-button type="link" @click="handleTest(record)">
                             测试
                         </a-button>
+                        <a-button type="link" @click="handleModels(record)">
+                            模型
+                        </a-button>
                         <a-button type="link" @click="handleView(record)">
                             查看
                         </a-button>
@@ -138,6 +141,10 @@ function handleEditSuccess() {
 
 function handleTest(record: Vendor) {
     testDialogRef.value?.open(record);
+}
+
+function handleModels(record: Vendor) {
+    router.push({ name: 'VendorModels', params: { id: record.id } });
 }
 
 function handleView(record: Vendor) {

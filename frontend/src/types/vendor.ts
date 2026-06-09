@@ -30,3 +30,11 @@ export interface UpdateVendorRequest {
 export interface VendorQuery extends TableQuery {
     type?: VendorType;
 }
+
+export interface VendorModel {
+    id: number;
+    vendor_id: number;
+    model_id: string;
+    created_at: string;
+    updated_at: string;
+}
