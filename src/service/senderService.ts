@@ -477,10 +477,6 @@ async function sendRequest(
     const upstreamFormat = vendor.getUpstreamFormat(format);
     const needsConversion = format !== upstreamFormat;
 
-    if (needsConversion) {
-        console.log(`[senderService] Protocol conversion enabled: client=${format} → upstream=${upstreamFormat}`);
-    }
-
     const url = vendor.getUrlByFormat(upstreamFormat);
 
     console.log("sendRequest: modelConfig={}, format={}, upstreamFormat={}", modelConfig, format, upstreamFormat);
@@ -573,6 +569,7 @@ async function sendRequest(
                 400,
             );
         }
+        console.log(`[senderService] Using protocol converter: ${converter.constructor.name}, client=${format}, upstream=${upstreamFormat}`);
         upstreamBody = converter.convertRequestBody(upstreamBody);
     }
 
