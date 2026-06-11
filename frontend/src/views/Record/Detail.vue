@@ -78,35 +78,40 @@
                     </a-descriptions>
                 </a-card>
 
-                <!-- 对话可视化 -->
-                <div v-if="conversationMessages.length > 0">
-                    <a-card title="可视化查看" class="detail-card">
-                        <div class="visualization-container">
-                            <iframe 
-                                ref="viewerIframe" 
-                                src="/data_viewer/dist/index.html" 
-                                @load="onIframeLoad" 
-                                frameborder="0"
-                                class="visualization-iframe"
-                            ></iframe>
-                        </div>
-                    </a-card>
-                </div>
+                <!-- 请求数据与可视化 -->
+                <a-card class="detail-card request-tabs-card">
+                    <a-tabs v-model:activeKey="activeRequestTab">
+                        <template #rightExtra>
+                            <a-button
+                                v-if="activeRequestTab === 'json'"
+                                type="link"
+                                size="small"
+                                :disabled="!recordStore.currentRecord?.request_data"
+                                @click="downloadJson(recordStore.currentRecord?.request_data, 'request')"
+                            >
+                                <template #icon><DownloadOutlined /></template>
+                                下载
+                            </a-button>
+                        </template>
 
-                <!-- 请求数据 -->
-                <a-card title="请求数据" class="detail-card">
-                    <template #extra>
-                        <a-button
-                            type="link"
-                            size="small"
-                            :disabled="!recordStore.currentRecord?.request_data"
-                            @click="downloadJson(recordStore.currentRecord?.request_data, 'request')"
-                        >
-                            <template #icon><DownloadOutlined /></template>
-                            下载
-                        </a-button>
-                    </template>
-                    <JsonViewer :data="recordStore.currentRecord.request_data" />
+                        <a-tab-pane key="visual" tab="可视化对话" v-if="conversationMessages.length > 0">
+                            <div class="visualization-container">
+                                <iframe 
+                                    ref="viewerIframe" 
+                                    src="/data_viewer/dist/index.html" 
+                                    @load="onIframeLoad" 
+                                    frameborder="0"
+                                    class="visualization-iframe"
+                                ></iframe>
+                            </div>
+                        </a-tab-pane>
+
+                        <a-tab-pane key="json" tab="原始请求 (JSON)">
+                            <div class="json-pane-content">
+                                <JsonViewer :data="recordStore.currentRecord.request_data" />
+                            </div>
+                        </a-tab-pane>
+                    </a-tabs>
                 </a-card>
 
                 <!-- 响应数据 -->
@@ -158,6 +163,7 @@ const route = useRoute();
 const recordStore = useRecordStore();
 
 const viewerIframe = ref<HTMLIFrameElement | null>(null);
+const activeRequestTab = ref<string>('json');
 
 const conversationMessages = computed(() => {
     const msgs: any[] = [];
@@ -194,13 +200,19 @@ function onIframeLoad() {
 }
 
 watch(conversationMessages, (newVal) => {
+    if (newVal.length > 0) {
+        activeRequestTab.value = 'visual';
+    } else {
+        activeRequestTab.value = 'json';
+    }
+
     if (newVal.length > 0 && viewerIframe.value && viewerIframe.value.contentWindow) {
         const bridge = (viewerIframe.value.contentWindow as any).gt_bridge;
         if (bridge && typeof bridge.setLlmData === 'function') {
             bridge.setLlmData(JSON.parse(JSON.stringify(newVal)));
         }
     }
-}, { deep: true });
+}, { deep: true, immediate: true });
 
 const currentRecordId = computed<number>(() => {
     const id = Number.parseInt(route.params.id as string, 10);
@@ -378,5 +390,17 @@ function downloadJson(data: string | null, type: 'request' | 'response') {
     height: 100%;
     border: 1px solid var(--border-color, #f0f0f0);
     border-radius: 8px;
+}
+
+.request-tabs-card :deep(.ant-card-body) {
+    padding-top: 0;
+}
+
+.request-tabs-card :deep(.ant-tabs-nav) {
+    margin-bottom: 16px;
+}
+
+.json-pane-content {
+    margin-top: 8px;
 }
 </style>
