@@ -11,7 +11,8 @@
     "app": {
         "windows": [
             {
-                "title": "AI Gateway",
+                "title": "",
+                "hiddenTitle": true,
                 "width": 1280,
                 "height": 800,
                 "resizable": true
