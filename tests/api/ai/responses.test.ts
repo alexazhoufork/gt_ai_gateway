@@ -87,8 +87,9 @@ describe("AI Responses API", () => {
             expect(record.user_id).toBe(testUserId);
             expect(record.model_id).toBe(responsesModelId);
             expect(record.status).toBe("success");
-            expect(record.prompt_tokens).toBeGreaterThan(0);
-            expect(record.output_tokens).toBeGreaterThan(0);
+            const usageR1 = JSON.parse(record.usage);
+            expect(usageR1.prompt_tokens).toBeGreaterThan(0);
+            expect(usageR1.completion_tokens).toBeGreaterThan(0);
         }, 30000);
 
         it("should handle streaming responses request", async () => {
@@ -119,8 +120,9 @@ describe("AI Responses API", () => {
             expect(record.user_id).toBe(testUserId);
             expect(record.model_id).toBe(responsesModelId);
             expect(record.status).toBe("success");
-            expect(record.prompt_tokens).toBeGreaterThan(0);
-            expect(record.output_tokens).toBeGreaterThan(0);
+            const usageR2 = JSON.parse(record.usage);
+            expect(usageR2.prompt_tokens).toBeGreaterThan(0);
+            expect(usageR2.completion_tokens).toBeGreaterThan(0);
 
             if (config.TEST_MODE === "node" && process.env.STREAM_LOG_ENABLED === "true") {
                 const streamLog = await streamLogHelper.readStreamLog(record.id);

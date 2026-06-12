@@ -17,15 +17,15 @@
             </template>
             <template v-else-if="column.key === 'token_stats'">
                 <div class="metric-cell">
-                    <div v-if="record.prompt_tokens !== null || record.output_tokens !== null">
+                    <div v-if="getTokens(record) !== null">
                         <span class="token-item" title="输入 Token">
                             <ArrowUpOutlined class="token-icon input" />
-                            {{ record.prompt_tokens ?? 0 }}
+                            {{ getTokens(record)!.prompt }}
                         </span>
                         <span class="token-divider">/</span>
                         <span class="token-item" title="输出 Token">
                             <ArrowDownOutlined class="token-icon output" />
-                            {{ record.output_tokens ?? 0 }}
+                            {{ getTokens(record)!.output }}
                         </span>
                     </div>
                     <div v-else>-</div>
@@ -121,13 +121,25 @@ function handleView(record: Record) {
     });
 }
 
+function getTokens(record: Record): { prompt: number; output: number } | null {
+    if (!record.usage) return null;
+    try {
+        const u = JSON.parse(record.usage);
+        if (u.prompt_tokens === undefined && u.completion_tokens === undefined) return null;
+        return { prompt: u.prompt_tokens ?? 0, output: u.completion_tokens ?? 0 };
+    } catch {
+        return null;
+    }
+}
+
 function getCacheHitRate(record: Record): number | null {
     if (!record.usage) return null;
     try {
         const u = JSON.parse(record.usage);
         if (u.cache_read_tokens === undefined || u.cache_read_tokens === null) return null;
         const cacheRead = u.cache_read_tokens;
-        const total = (record.prompt_tokens ?? 0) + cacheRead;
+        const promptTokens = u.prompt_tokens ?? 0;
+        const total = promptTokens + cacheRead;
         if (total <= 0) return 0;
         return Math.round(cacheRead / total * 100);
     } catch {

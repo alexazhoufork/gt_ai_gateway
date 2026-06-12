@@ -160,8 +160,9 @@ describe("AI Protocol Conversion API", () => {
         expect(record.user_id).toBe(testUserId);
         expect(record.model_id).toBe(openAIClientModelId);
         expect(record.status).toBe("success");
-        expect(record.prompt_tokens).toBeGreaterThan(0);
-        expect(record.output_tokens).toBeGreaterThan(0);
+        const usageA = JSON.parse(record.usage);
+        expect(usageA.prompt_tokens).toBeGreaterThan(0);
+        expect(usageA.completion_tokens).toBeGreaterThan(0);
 
         const responseData = JSON.parse(record.response_data);
         expect(responseData.choices[0].message.role).toBe("assistant");
@@ -194,8 +195,9 @@ describe("AI Protocol Conversion API", () => {
         expect(record.user_id).toBe(testUserId);
         expect(record.model_id).toBe(anthropicClientModelId);
         expect(record.status).toBe("success");
-        expect(record.prompt_tokens).toBeGreaterThan(0);
-        expect(record.output_tokens).toBeGreaterThan(0);
+        const usageB = JSON.parse(record.usage);
+        expect(usageB.prompt_tokens).toBeGreaterThan(0);
+        expect(usageB.completion_tokens).toBeGreaterThan(0);
 
         const responseData = JSON.parse(record.response_data);
         expect(responseData.choices[0].message.role).toBe("assistant");
