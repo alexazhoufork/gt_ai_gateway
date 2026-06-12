@@ -46,6 +46,7 @@
                             :show-time="{ format: 'HH:mm' }"
                             format="YYYY-MM-DD HH:mm"
                             @change="handleDateChange"
+                            style="width: 340px"
                         />
                     </a-form-item>
                     <a-form-item>
