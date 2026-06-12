@@ -27,8 +27,6 @@ async function create(
         status: SgRecordStatus.INIT,
         client_format: clientFormat,
         upstream_format: upstreamFormat !== clientFormat ? upstreamFormat : null,
-        prompt_tokens: null,
-        output_tokens: null,
         first_token_latency: null,
         start_at: null,
         end_at: null,

@@ -9,7 +9,7 @@ import recordService from "./recordService";
 import ormService from "./ormService";
 import { SgRecordStatus, FailedCode, ApiFormat } from "../constants";
 import sseAccumulator from "../util/sseAccumulator";
-import { SgRecord } from "../model/sgRecord";
+import { SgRecord, SgRecordUsage } from "../model/sgRecord";
 import { mkdirSync, existsSync, createWriteStream, WriteStream } from "fs";
 import { join } from "path";
 import { getLogDir } from "../util/logger";
@@ -201,8 +201,6 @@ async function handleStreamResponse(
             await recordService.update(record.id, {
                 response_data: JSON.stringify(fullResponse),
                 status: SgRecordStatus.SUCCESS,
-                prompt_tokens: promptTokens,
-                output_tokens: outputTokens,
                 usage: fullResponse.usage ? JSON.stringify(fullResponse.usage) : null,
                 first_token_latency: firstTokenTime !== null
                     ? firstTokenTime - record.created_at.getTime()
@@ -263,22 +261,22 @@ async function handleNonStreamResponse(
             promptTokens = responseJson.usage?.input_tokens ?? null;
             outputTokens = responseJson.usage?.output_tokens ?? null;
             if (responseJson.usage) {
-                usageJson = JSON.stringify({
-                    prompt_tokens: promptTokens,
-                    completion_tokens: outputTokens,
-                    cache_read_tokens: responseJson.usage.cache_read_input_tokens ?? null,
-                    cache_creation_tokens: responseJson.usage.cache_creation_input_tokens ?? null,
-                });
+                const u = new SgRecordUsage();
+                u.prompt_tokens = promptTokens ?? undefined;
+                u.completion_tokens = outputTokens ?? undefined;
+                u.cache_read_tokens = responseJson.usage.cache_read_input_tokens ?? undefined;
+                u.cache_creation_tokens = responseJson.usage.cache_creation_input_tokens ?? undefined;
+                usageJson = JSON.stringify(u);
             }
         } else {
             promptTokens = responseJson.usage?.prompt_tokens ?? null;
             outputTokens = responseJson.usage?.completion_tokens ?? null;
             if (responseJson.usage) {
-                usageJson = JSON.stringify({
-                    prompt_tokens: promptTokens,
-                    completion_tokens: outputTokens,
-                    cache_read_tokens: responseJson.usage.prompt_tokens_details?.cached_tokens ?? null,
-                });
+                const u = new SgRecordUsage();
+                u.prompt_tokens = promptTokens ?? undefined;
+                u.completion_tokens = outputTokens ?? undefined;
+                u.cache_read_tokens = responseJson.usage.prompt_tokens_details?.cached_tokens ?? undefined;
+                usageJson = JSON.stringify(u);
             }
         }
     } catch (e) {
@@ -292,8 +290,6 @@ async function handleNonStreamResponse(
     await recordService.update(record.id, {
         response_data: clientResponseText,
         status: statusCode === 200 ? SgRecordStatus.SUCCESS : SgRecordStatus.FAILED,
-        prompt_tokens: promptTokens,
-        output_tokens: outputTokens,
         usage: usageJson,
         end_at: new Date(),
         cost: cost,
@@ -397,12 +393,18 @@ async function handleResponsesStreamResponse(
                             const promptTokens = usage?.input_tokens ?? 0;
                             const outputTokens = usage?.output_tokens ?? 0;
                             const cost = calculateCost(model, promptTokens, outputTokens);
+                            let usageJson: string | null = null;
+                            if (usage) {
+                                const u = new SgRecordUsage();
+                                u.prompt_tokens = promptTokens;
+                                u.completion_tokens = outputTokens;
+                                usageJson = JSON.stringify(u);
+                            }
 
                             await recordService.update(record.id, {
                                 response_data: JSON.stringify(parsedData.response),
                                 status: SgRecordStatus.SUCCESS,
-                                prompt_tokens: promptTokens,
-                                output_tokens: outputTokens,
+                                usage: usageJson,
                                 first_token_latency: firstTokenTime !== null
                                     ? firstTokenTime - record.created_at.getTime()
                                     : null,
@@ -451,25 +453,29 @@ async function handleResponsesNonStreamResponse(
     const responseText = await upstreamRes.text();
     const statusCode = upstreamRes.status as StatusCode;
 
-    let promptTokens: number | null = null;
-    let outputTokens: number | null = null;
+    let promptTokens = 0;
+    let outputTokens = 0;
+    let usageJson: string | null = null;
     try {
         const responseJson = JSON.parse(responseText);
-        promptTokens = responseJson.usage?.input_tokens ?? null;
-        outputTokens = responseJson.usage?.output_tokens ?? null;
+        promptTokens = responseJson.usage?.input_tokens ?? 0;
+        outputTokens = responseJson.usage?.output_tokens ?? 0;
+        if (responseJson.usage) {
+            const u = new SgRecordUsage();
+            u.prompt_tokens = promptTokens;
+            u.completion_tokens = outputTokens;
+            usageJson = JSON.stringify(u);
+        }
     } catch (e) {
         console.log("Failed to parse responses API response:", e);
     }
 
-    const finalPromptTokens = promptTokens ?? 0;
-    const finalOutputTokens = outputTokens ?? 0;
-    const cost = calculateCost(model, finalPromptTokens, finalOutputTokens);
+    const cost = calculateCost(model, promptTokens, outputTokens);
 
     await recordService.update(record.id, {
         response_data: responseText,
         status: statusCode === 200 ? SgRecordStatus.SUCCESS : SgRecordStatus.FAILED,
-        prompt_tokens: promptTokens,
-        output_tokens: outputTokens,
+        usage: usageJson,
         end_at: new Date(),
         cost,
     });

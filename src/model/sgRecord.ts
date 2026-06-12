@@ -3,6 +3,16 @@ import { inspect, InspectOptions } from "util";
 
 import { SgRecordStatus } from "../constants";
 
+
+class SgRecordUsage {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+    cache_read_tokens?: number;
+    cache_creation_tokens?: number;
+}
+
+
 class SgRecord extends Model {
     table = "record";
 
@@ -22,8 +32,6 @@ class SgRecord extends Model {
     client_format!: string | null;
     upstream_format!: string | null;
 
-    prompt_tokens!: number | null;
-    output_tokens!: number | null;
     usage!: string | null;
     first_token_latency!: number | null;
     start_at!: Date | null;
@@ -38,4 +46,4 @@ class SgRecord extends Model {
     }
 }
 
-export { SgRecord };
+export { SgRecord, SgRecordUsage };

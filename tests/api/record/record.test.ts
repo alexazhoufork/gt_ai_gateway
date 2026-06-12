@@ -69,8 +69,7 @@ describe("Record API", () => {
                 expect(record).toHaveProperty("request_data");
                 expect(record).toHaveProperty("response_data");
                 expect(record).toHaveProperty("status");
-                expect(record).toHaveProperty("prompt_tokens");
-                expect(record).toHaveProperty("output_tokens");
+                expect(record).toHaveProperty("usage");
                 expect(record).toHaveProperty("first_token_latency");
                 expect(record).toHaveProperty("start_at");
                 expect(record).toHaveProperty("end_at");
@@ -328,8 +327,7 @@ describe("Record API", () => {
             expect(recordsResponse.status).toBe(200);
             expect(recordsResponse.body.length).toBeGreaterThan(0);
             const record = recordsResponse.body[0];
-            expect(record).toHaveProperty("prompt_tokens");
-            expect(record).toHaveProperty("output_tokens");
+            expect(record).toHaveProperty("usage");
             expect(record).toHaveProperty("first_token_latency");
             expect(record).toHaveProperty("start_at");
             expect(record).toHaveProperty("end_at");
@@ -359,8 +357,7 @@ describe("Record API", () => {
             );
 
             expect(recordResponse.status).toBe(200);
-            expect(recordResponse.body).toHaveProperty("prompt_tokens");
-            expect(recordResponse.body).toHaveProperty("output_tokens");
+            expect(recordResponse.body).toHaveProperty("usage");
             expect(recordResponse.body).toHaveProperty("first_token_latency");
             expect(recordResponse.body).toHaveProperty("start_at");
             expect(recordResponse.body).toHaveProperty("end_at");
@@ -387,8 +384,7 @@ describe("Record API", () => {
             expect(recordsResponse.body.length).toBeGreaterThan(0);
 
             for (const record of recordsResponse.body) {
-                expect(record).toHaveProperty("prompt_tokens");
-                expect(record).toHaveProperty("output_tokens");
+                expect(record).toHaveProperty("usage");
                 expect(record).toHaveProperty("first_token_latency");
                 expect(record).toHaveProperty("start_at");
                 expect(record).toHaveProperty("end_at");
@@ -416,8 +412,7 @@ describe("Record API", () => {
             expect(recordsResponse.body.list.length).toBeGreaterThan(0);
 
             for (const record of recordsResponse.body.list) {
-                expect(record).toHaveProperty("prompt_tokens");
-                expect(record).toHaveProperty("output_tokens");
+                expect(record).toHaveProperty("usage");
                 expect(record).toHaveProperty("first_token_latency");
                 expect(record).toHaveProperty("start_at");
                 expect(record).toHaveProperty("end_at");
@@ -453,13 +448,14 @@ describe("Record API", () => {
             expect(recordResponse.body.model_id).toBe(openaiModelId);
 
             // Verify token statistics are populated
+            const usage1 = JSON.parse(recordResponse.body.usage);
             if (config.isRealMode) {
-                expect(recordResponse.body.prompt_tokens).toBeGreaterThan(0);
-                expect(recordResponse.body.output_tokens).toBeGreaterThan(0);
+                expect(usage1.prompt_tokens).toBeGreaterThan(0);
+                expect(usage1.completion_tokens).toBeGreaterThan(0);
             } else {
                 // mock server returns 10 prompt, 15 completion
-                expect(recordResponse.body.prompt_tokens).toBe(10);
-                expect(recordResponse.body.output_tokens).toBe(15);
+                expect(usage1.prompt_tokens).toBe(10);
+                expect(usage1.completion_tokens).toBe(15);
             }
 
             // Verify timing fields
@@ -501,13 +497,14 @@ describe("Record API", () => {
             expect(recordResponse.body.model_id).toBe(openaiModelId);
 
             // Verify token statistics for streaming
+            const usage2 = JSON.parse(recordResponse.body.usage);
             if (config.isRealMode) {
-                expect(recordResponse.body.prompt_tokens).toBeGreaterThan(0);
-                expect(recordResponse.body.output_tokens).toBeGreaterThan(0);
+                expect(usage2.prompt_tokens).toBeGreaterThan(0);
+                expect(usage2.completion_tokens).toBeGreaterThan(0);
             } else {
                 // mock returns 8 prompt, 12 completion
-                expect(recordResponse.body.prompt_tokens).toBe(8);
-                expect(recordResponse.body.output_tokens).toBe(12);
+                expect(usage2.prompt_tokens).toBe(8);
+                expect(usage2.completion_tokens).toBe(12);
             }
 
             // Verify first_token_latency is recorded (should be positive for streaming)
@@ -547,13 +544,14 @@ describe("Record API", () => {
             expect(recordResponse.body.model_id).toBe(anthropicModelId);
 
             // Verify token statistics
+            const usage3 = JSON.parse(recordResponse.body.usage);
             if (config.isRealMode) {
-                expect(recordResponse.body.prompt_tokens).toBeGreaterThan(0);
-                expect(recordResponse.body.output_tokens).toBeGreaterThan(0);
+                expect(usage3.prompt_tokens).toBeGreaterThan(0);
+                expect(usage3.completion_tokens).toBeGreaterThan(0);
             } else {
                 // mock returns 10 input, 15 output
-                expect(recordResponse.body.prompt_tokens).toBe(10);
-                expect(recordResponse.body.output_tokens).toBe(15);
+                expect(usage3.prompt_tokens).toBe(10);
+                expect(usage3.completion_tokens).toBe(15);
             }
 
             // Verify timing fields
@@ -590,13 +588,14 @@ describe("Record API", () => {
             expect(recordResponse.body.model_id).toBe(anthropicModelId);
 
             // Verify token statistics for streaming
+            const usage4 = JSON.parse(recordResponse.body.usage);
             if (config.isRealMode) {
-                expect(recordResponse.body.prompt_tokens).toBeGreaterThan(0);
-                expect(recordResponse.body.output_tokens).toBeGreaterThan(0);
+                expect(usage4.prompt_tokens).toBeGreaterThan(0);
+                expect(usage4.completion_tokens).toBeGreaterThan(0);
             } else {
                 // mock returns 8 input, 12 output
-                expect(recordResponse.body.prompt_tokens).toBe(8);
-                expect(recordResponse.body.output_tokens).toBe(12);
+                expect(usage4.prompt_tokens).toBe(8);
+                expect(usage4.completion_tokens).toBe(12);
             }
 
             // Verify first_token_latency is recorded (should be positive for streaming)

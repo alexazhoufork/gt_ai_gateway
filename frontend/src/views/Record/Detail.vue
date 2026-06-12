@@ -60,16 +60,16 @@
                         <a-descriptions-item label="创建时间">
                             {{ formatDate(recordStore.currentRecord.created_at) }}
                         </a-descriptions-item>
-                        <a-descriptions-item label="提示词 Token" v-if="recordStore.currentRecord.prompt_tokens">
+                        <a-descriptions-item label="提示词 Token" v-if="usageTokens?.prompt">
                             <span class="token-item">
                                 <ArrowUpOutlined class="token-icon input" />
-                                {{ recordStore.currentRecord.prompt_tokens }}
+                                {{ usageTokens.prompt }}
                             </span>
                         </a-descriptions-item>
-                        <a-descriptions-item label="输出 Token" v-if="recordStore.currentRecord.output_tokens">
+                        <a-descriptions-item label="输出 Token" v-if="usageTokens?.output">
                             <span class="token-item">
                                 <ArrowDownOutlined class="token-icon output" />
-                                {{ recordStore.currentRecord.output_tokens }}
+                                {{ usageTokens.output }}
                             </span>
                         </a-descriptions-item>
                         <a-descriptions-item label="首 Token 延迟" v-if="recordStore.currentRecord.first_token_latency">
@@ -242,6 +242,18 @@ watch(conversationData, (newVal) => {
         }
     }
 }, { deep: true, immediate: true });
+
+const usageTokens = computed(() => {
+    const usage = recordStore.currentRecord?.usage;
+    if (!usage) return null;
+    try {
+        const u = JSON.parse(usage);
+        if (u.prompt_tokens === undefined && u.completion_tokens === undefined) return null;
+        return { prompt: u.prompt_tokens ?? 0, output: u.completion_tokens ?? 0 };
+    } catch {
+        return null;
+    }
+});
 
 const currentRecordId = computed<number>(() => {
     const id = Number.parseInt(route.params.id as string, 10);
