@@ -201,6 +201,7 @@ function handleTest(record: Model) {
     testDialogRef.value?.open(vendor, upstreamModel, {
         modelName: record.name,
         vendorModelName,
+        showAutoConvert: true,
     });
 }
 

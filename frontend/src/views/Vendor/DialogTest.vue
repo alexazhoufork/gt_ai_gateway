@@ -57,19 +57,24 @@
                         </a-form-item>
                     </template>
 
-                    <div v-if="modelInfo && (canAutoConvert || !hasDirectUrl)" class="auto-convert-row">
-                        <a-checkbox
-                            v-model:checked="useAutoConvert"
-                            :disabled="!canAutoConvert"
-                        >
-                            自动转换
-                            <span v-if="canAutoConvert" class="convert-hint">
-                                ({{ format.toUpperCase() }} → {{ autoConvertTo!.toUpperCase() }})
+                    <div v-if="modelInfo?.showAutoConvert && (canAutoConvert || !hasDirectUrl)" class="auto-convert-row">
+                        <div class="auto-convert-main">
+                            <a-checkbox
+                                v-model:checked="useAutoConvert"
+                                :disabled="!canAutoConvert"
+                            >
+                                自动转换
+                                <span v-if="canAutoConvert" class="convert-hint">
+                                    ({{ format.toUpperCase() }} → {{ autoConvertTo!.toUpperCase() }})
+                                </span>
+                            </a-checkbox>
+                            <span v-if="!hasDirectUrl && !canAutoConvert" class="no-url-hint">
+                                无可用转换格式
                             </span>
-                        </a-checkbox>
-                        <span v-if="!hasDirectUrl && !canAutoConvert" class="no-url-hint">
-                            该供应商未配置 {{ format.toUpperCase() }} URL，且无可用转换格式
-                        </span>
+                        </div>
+                        <div v-if="noDirectUrlReason" class="convert-reason-line">
+                            {{ noDirectUrlReason }}
+                        </div>
                     </div>
 
                     <a-button
@@ -131,6 +136,8 @@ import { useVendorPresets } from '@/composables/useVendorPresets';
 interface ModelInfo {
     modelName: string;
     vendorModelName: string | null;
+    allowedFormats?: string[] | null;
+    showAutoConvert?: boolean;
 }
 
 const { presetUrls, load: loadPresets } = useVendorPresets();
@@ -151,7 +158,21 @@ const mergedUrls = computed(() => {
     return merged;
 });
 
+const selectedVendorModelFormats = computed<string[] | null>(() => {
+    if (modelInfo.value || !testModel.value) return null;
+    const vm = vendorModels.value.find(m => m.model_id === testModel.value);
+    return vm?.allowed_formats ?? null;
+});
+
+const allowedFormats = computed(() =>
+    modelInfo.value?.allowedFormats ?? selectedVendorModelFormats.value,
+);
+
 const hasDirectUrl = computed(() => {
+    // If vendor model restricts protocols, format must be in the allowed list
+    if (allowedFormats.value?.length && !allowedFormats.value.includes(format.value)) {
+        return false;
+    }
     if (format.value === 'responses') {
         return !!(mergedUrls.value['responses'] || mergedUrls.value['openai']);
     }
@@ -160,17 +181,30 @@ const hasDirectUrl = computed(() => {
 
 const autoConvertTo = computed(() => {
     if (hasDirectUrl.value) return null;
-    const formats = ['openai', 'anthropic'];
-    return formats.find(f => f !== format.value && !!mergedUrls.value[f]) ?? null;
+    // Prefer converting to an allowed format (if restriction exists), else any available
+    const candidates = allowedFormats.value?.length
+        ? allowedFormats.value
+        : ['openai', 'anthropic'];
+    return candidates.find(f => f !== format.value && !!mergedUrls.value[f]) ?? null;
 });
 
 const canAutoConvert = computed(() => !!autoConvertTo.value);
 
+const noDirectUrlReason = computed(() => {
+    if (hasDirectUrl.value) return null;
+    const af = allowedFormats.value;
+    if (af?.length && !af.includes(format.value)) {
+        const allowed = af.map(f => f.toUpperCase()).join('、');
+        return `供应商模型仅支持 ${allowed} 协议，可通过自动转换来使用`;
+    }
+    return `供应商未配置 ${format.value.toUpperCase()} 协议的 URL，可通过自动转换来使用`;
+});
+
 const testButtonDisabled = computed(() => {
     if (!testModel.value) return true;
     if (!hasDirectUrl.value) {
-        // 供应商模式：直接禁用；模型模式：可以靠自动转换解锁
-        return !modelInfo.value || !useAutoConvert.value;
+        // 只有模型管理模式（showAutoConvert）可以靠勾选自动转换解锁
+        return !modelInfo.value?.showAutoConvert || !useAutoConvert.value;
     }
     return false;
 });
@@ -222,7 +256,10 @@ function open(vendor: Vendor, defaultModel?: string, info?: ModelInfo) {
     searchValue.value = '';
     useAutoConvert.value = false;
 
-    if (vendor.type === 'anthropic') {
+    const af = info?.allowedFormats;
+    if (af?.length) {
+        format.value = af[0]!;
+    } else if (vendor.type === 'anthropic') {
         format.value = 'anthropic';
     } else {
         format.value = 'openai';
@@ -365,6 +402,12 @@ defineExpose({ open });
 .auto-convert-row {
     margin-bottom: 12px;
     display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.auto-convert-main {
+    display: flex;
     align-items: center;
     gap: 8px;
 }
@@ -372,6 +415,13 @@ defineExpose({ open });
 .convert-hint {
     color: #8c8c8c;
     font-size: 12px;
+}
+
+.convert-reason-line {
+    margin-left: 24px;
+    color: #faad14;
+    font-size: 12px;
+    line-height: 1.4;
 }
 
 .no-url-hint {

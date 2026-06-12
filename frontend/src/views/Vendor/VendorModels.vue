@@ -222,6 +222,7 @@ function handleTest(record: VendorModel) {
     testDialogRef.value?.open(currentVendor.value, record.model_id, {
         modelName: record.model_id,
         vendorModelName: null,
+        allowedFormats: record.allowed_formats,
     });
 }
 
