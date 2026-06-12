@@ -210,6 +210,14 @@ async function testVendor(c: Context) {
             messages: [{ role: "user", content: "ping" }],
             max_tokens: 1,
         });
+    } else if (requestFormat === ApiFormat.RESPONSES) {
+        headers.set("Authorization", vendor.token.startsWith("Bearer ") ? vendor.token : `Bearer ${vendor.token}`);
+        headers.set("Content-Type", "application/json");
+        upstreamBody = JSON.stringify({
+            model: model,
+            input: "ping",
+            max_output_tokens: 16,
+        });
     } else {
         headers.set("Authorization", vendor.token.startsWith("Bearer ") ? vendor.token : `Bearer ${vendor.token}`);
         headers.set("Content-Type", "application/json");

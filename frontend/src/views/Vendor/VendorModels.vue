@@ -28,13 +28,24 @@
                 size="small"
             >
                 <template #bodyCell="{ column, record }">
-                    <template v-if="column.key === 'created_at'">
+                    <template v-if="column.key === 'allowed_formats'">
+                        <span v-if="!record.allowed_formats || record.allowed_formats.length === 0" class="format-auto">全部</span>
+                        <a-space v-else :size="4" wrap>
+                            <a-tag v-for="fmt in record.allowed_formats" :key="fmt" :color="formatTagColor(fmt)">
+                                {{ fmt.toUpperCase() }}
+                            </a-tag>
+                        </a-space>
+                    </template>
+                    <template v-else-if="column.key === 'created_at'">
                         {{ formatDate(record.created_at) }}
                     </template>
                     <template v-if="column.key === 'action'">
                         <a-space>
                             <a-button type="link" size="small" style="padding: 0" @click="handleTest(record)">
                                 测试
+                            </a-button>
+                            <a-button type="link" size="small" style="padding: 0" @click="handleEditFormats(record)">
+                                编辑
                             </a-button>
                             <a-button type="link" danger size="small" style="padding: 0" @click="handleDelete(record)">
                                 删除
@@ -63,6 +74,27 @@
                         allow-clear
                         @pressEnter="handleManualAdd"
                     />
+                </a-form-item>
+            </a-form>
+        </a-modal>
+
+        <!-- 编辑协议限制弹窗 -->
+        <a-modal
+            v-model:open="editFormatsVisible"
+            title="编辑支持协议"
+            :confirm-loading="editFormatsLoading"
+            @ok="handleEditFormatsConfirm"
+            @cancel="editFormatsVisible = false"
+        >
+            <a-form layout="horizontal" :label-col="{ span: 5 }" style="margin-top: 16px">
+                <a-form-item label="支持协议">
+                    <a-radio-group v-model:value="editFormatsMode">
+                        <a-radio value="auto">全部</a-radio>
+                        <a-radio value="manual">手动指定</a-radio>
+                    </a-radio-group>
+                </a-form-item>
+                <a-form-item v-if="editFormatsMode === 'manual'" label="指定协议">
+                    <a-checkbox-group v-model:value="editFormatsSelected" :options="formatOptions" />
                 </a-form-item>
             </a-form>
         </a-modal>
@@ -116,7 +148,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { TableColumnsType } from 'ant-design-vue';
 import { Modal } from 'ant-design-vue/es';
-import { getVendor, listVendorModels, fetchVendorModels, syncVendorModels, addVendorModel, deleteVendorModel } from '@/api/vendor';
+import { getVendor, listVendorModels, fetchVendorModels, syncVendorModels, addVendorModel, updateVendorModel, deleteVendorModel } from '@/api/vendor';
 import { formatDate } from '@/utils/format';
 import { notifyRequestError, notifySuccess } from '@/utils/requestFeedback';
 import type { Vendor, VendorModel } from '@/types/vendor';
@@ -149,10 +181,26 @@ const filteredModels = computed(() =>
         : fetchedModels.value,
 );
 
+const FORMAT_OPTIONS = ['openai', 'anthropic', 'responses'] as const;
+const formatOptions = FORMAT_OPTIONS.map(f => ({ label: f.toUpperCase(), value: f }));
+
+function formatTagColor(fmt: string): string {
+    if (fmt === 'anthropic') return 'orange';
+    if (fmt === 'responses') return 'blue';
+    return 'default';
+}
+
+const editFormatsVisible = ref(false);
+const editFormatsLoading = ref(false);
+const editFormatsRecord = ref<VendorModel | null>(null);
+const editFormatsMode = ref<'auto' | 'manual'>('auto');
+const editFormatsSelected = ref<string[]>([]);
+
 const columns: TableColumnsType<VendorModel> = [
     { title: 'Model ID', key: 'model_id', dataIndex: 'model_id' },
+    { title: '支持协议', key: 'allowed_formats', width: 180 },
     { title: '添加时间', key: 'created_at', dataIndex: 'created_at', width: 180 },
-    { title: '操作', key: 'action', width: 120, fixed: 'right' as const },
+    { title: '操作', key: 'action', width: 140, fixed: 'right' as const },
 ];
 
 onMounted(async () => {
@@ -271,6 +319,36 @@ function selectNone() {
     selectedModelIds.value = [];
 }
 
+function handleEditFormats(record: VendorModel) {
+    editFormatsRecord.value = record;
+    if (record.allowed_formats && record.allowed_formats.length > 0) {
+        editFormatsMode.value = 'manual';
+        editFormatsSelected.value = [...record.allowed_formats];
+    } else {
+        editFormatsMode.value = 'auto';
+        editFormatsSelected.value = [];
+    }
+    editFormatsVisible.value = true;
+}
+
+async function handleEditFormatsConfirm() {
+    if (!editFormatsRecord.value) return;
+    editFormatsLoading.value = true;
+    try {
+        const newFormats = editFormatsMode.value === 'manual' && editFormatsSelected.value.length > 0
+            ? editFormatsSelected.value : null;
+        const updated = await updateVendorModel(vendorId, editFormatsRecord.value.id, newFormats);
+        const idx = models.value.findIndex(m => m.id === updated.id);
+        if (idx !== -1) models.value[idx] = updated;
+        notifySuccess('已更新');
+        editFormatsVisible.value = false;
+    } catch (error) {
+        notifyRequestError(error, '更新失败');
+    } finally {
+        editFormatsLoading.value = false;
+    }
+}
+
 function handleBack() {
     router.push({ name: 'VendorList' });
 }
@@ -345,5 +423,10 @@ function handleBack() {
     color: var(--color-text-secondary, #888);
     text-align: center;
     padding: 24px 0;
+}
+
+.format-auto {
+    color: var(--color-text-secondary, #888);
+    font-size: 13px;
 }
 </style>

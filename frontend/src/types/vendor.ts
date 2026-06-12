@@ -36,6 +36,7 @@ export interface VendorModel {
     id: number;
     vendor_id: number;
     model_id: string;
+    allowed_formats: string[] | null;
     created_at: string;
     updated_at: string;
 }

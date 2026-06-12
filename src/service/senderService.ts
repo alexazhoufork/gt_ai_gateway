@@ -499,7 +499,24 @@ async function sendRequest(
     format: ApiFormat,
     body: string,
 ): Promise<Response> {
-    const upstreamFormat = vendor.getUpstreamFormat(format);
+    let upstreamFormat = vendor.getUpstreamFormat(format);
+
+    if (modelConfig.vendor_model_id) {
+        const vendorModel = await SgVendorModel.query().find(modelConfig.vendor_model_id);
+        const allowed = vendorModel?.getAllowedFormats();
+        if (allowed && !allowed.includes(upstreamFormat)) {
+            const urls = vendor.getMergedUrls();
+            const override = allowed.find(fmt => !!urls[fmt]);
+            if (override) {
+                upstreamFormat = override;
+            } else {
+                throw new customError.AppError(
+                    `Model does not support format: ${upstreamFormat}. Allowed: ${allowed.join(", ")}`, 400
+                );
+            }
+        }
+    }
+
     const needsConversion = format !== upstreamFormat;
 
     const url = vendor.getUrlByFormat(upstreamFormat);

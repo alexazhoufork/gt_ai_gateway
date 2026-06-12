@@ -30,6 +30,7 @@
                         <a-radio-group v-model:value="format">
                             <a-radio-button value="openai">OpenAI</a-radio-button>
                             <a-radio-button value="anthropic">Anthropic</a-radio-button>
+                            <a-radio-button value="responses">Responses</a-radio-button>
                         </a-radio-group>
                     </a-form-item>
 
@@ -150,7 +151,12 @@ const mergedUrls = computed(() => {
     return merged;
 });
 
-const hasDirectUrl = computed(() => !!mergedUrls.value[format.value]);
+const hasDirectUrl = computed(() => {
+    if (format.value === 'responses') {
+        return !!(mergedUrls.value['responses'] || mergedUrls.value['openai']);
+    }
+    return !!mergedUrls.value[format.value];
+});
 
 const autoConvertTo = computed(() => {
     if (hasDirectUrl.value) return null;

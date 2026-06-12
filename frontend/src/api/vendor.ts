@@ -58,6 +58,10 @@ export async function addVendorModel(vendorId: number, modelId: string): Promise
     return request.post(`/vendor/${vendorId}/model/add.json`, { model_id: modelId });
 }
 
+export async function updateVendorModel(vendorId: number, id: number, allowedFormats: string[] | null): Promise<import('../types/vendor').VendorModel> {
+    return request.put(`/vendor/${vendorId}/model/${id}`, { allowed_formats: allowedFormats });
+}
+
 export async function deleteVendorModel(vendorId: number, id: number): Promise<{ success: boolean }> {
     return request.delete(`/vendor/${vendorId}/model/${id}`);
 }

@@ -25,7 +25,6 @@ export enum VendorType {
 export enum ApiFormat {
     OPENAI = "openai",
     ANTHROPIC = "anthropic",
-    GOOGLE = "google",
     RESPONSES = "responses",
 }
 
