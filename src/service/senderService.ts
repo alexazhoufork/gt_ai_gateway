@@ -203,6 +203,7 @@ async function handleStreamResponse(
                 status: SgRecordStatus.SUCCESS,
                 prompt_tokens: promptTokens,
                 output_tokens: outputTokens,
+                usage: fullResponse.usage ? JSON.stringify(fullResponse.usage) : null,
                 first_token_latency: firstTokenTime !== null
                     ? firstTokenTime - record.created_at.getTime()
                     : null,
@@ -255,14 +256,30 @@ async function handleNonStreamResponse(
     // 从响应体中提取 token 统计
     let promptTokens: number | null = null;
     let outputTokens: number | null = null;
+    let usageJson: string | null = null;
     try {
         const responseJson = JSON.parse(responseText);
         if (upstreamFormat === ApiFormat.ANTHROPIC) {
             promptTokens = responseJson.usage?.input_tokens ?? null;
             outputTokens = responseJson.usage?.output_tokens ?? null;
+            if (responseJson.usage) {
+                usageJson = JSON.stringify({
+                    prompt_tokens: promptTokens,
+                    completion_tokens: outputTokens,
+                    cache_read_tokens: responseJson.usage.cache_read_input_tokens ?? null,
+                    cache_creation_tokens: responseJson.usage.cache_creation_input_tokens ?? null,
+                });
+            }
         } else {
             promptTokens = responseJson.usage?.prompt_tokens ?? null;
             outputTokens = responseJson.usage?.completion_tokens ?? null;
+            if (responseJson.usage) {
+                usageJson = JSON.stringify({
+                    prompt_tokens: promptTokens,
+                    completion_tokens: outputTokens,
+                    cache_read_tokens: responseJson.usage.prompt_tokens_details?.cached_tokens ?? null,
+                });
+            }
         }
     } catch (e) {
         console.log("Failed to parse response for token stats:", e);
@@ -277,6 +294,7 @@ async function handleNonStreamResponse(
         status: statusCode === 200 ? SgRecordStatus.SUCCESS : SgRecordStatus.FAILED,
         prompt_tokens: promptTokens,
         output_tokens: outputTokens,
+        usage: usageJson,
         end_at: new Date(),
         cost: cost,
     });

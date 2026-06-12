@@ -14,6 +14,7 @@ export interface Record extends BaseEntity {
     upstream_format: string | null;
     prompt_tokens: number | null;
     output_tokens: number | null;
+    usage: string | null;
     first_token_latency: number | null;
     start_at: string | number | null;
     end_at: string | number | null;

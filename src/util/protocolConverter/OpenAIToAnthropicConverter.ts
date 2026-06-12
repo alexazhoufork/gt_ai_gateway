@@ -360,6 +360,7 @@ export class OpenAIToAnthropicConverter extends BaseConverter {
 
                 if (chunk.usage) {
                     // usage 在同一帧里，直接发出
+                    const cachedTokens = (chunk.usage as any).prompt_tokens_details?.cached_tokens;
                     events.push({
                         event: "message_delta",
                         data: JSON.stringify({
@@ -368,6 +369,7 @@ export class OpenAIToAnthropicConverter extends BaseConverter {
                             usage: {
                                 input_tokens: chunk.usage.prompt_tokens || 0,
                                 output_tokens: chunk.usage.completion_tokens || 0,
+                                ...(cachedTokens !== undefined ? { cache_read_input_tokens: cachedTokens } : {}),
                             },
                         }),
                     });
@@ -384,6 +386,7 @@ export class OpenAIToAnthropicConverter extends BaseConverter {
 
         // 处理 OpenAI stream_options 的独立 usage 帧（choices 为空，只含 usage）
         if ((!chunk.choices || chunk.choices.length === 0) && chunk.usage && this.pendingStopReason !== null) {
+            const cachedTokens = (chunk.usage as any).prompt_tokens_details?.cached_tokens;
             events.push({
                 event: "message_delta",
                 data: JSON.stringify({
@@ -392,6 +395,7 @@ export class OpenAIToAnthropicConverter extends BaseConverter {
                     usage: {
                         input_tokens: chunk.usage.prompt_tokens || 0,
                         output_tokens: chunk.usage.completion_tokens || 0,
+                        ...(cachedTokens !== undefined ? { cache_read_input_tokens: cachedTokens } : {}),
                     },
                 }),
             });

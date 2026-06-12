@@ -29,6 +29,9 @@
                         </span>
                     </div>
                     <div v-else>-</div>
+                    <div v-if="getCacheHitRate(record) !== null" class="metric-sub">
+                        缓存 {{ getCacheHitRate(record) }}%
+                    </div>
                 </div>
             </template>
             <template v-else-if="column.key === 'timing'">
@@ -117,6 +120,21 @@ function handleView(record: Record) {
         params: { id: String(record.id) },
     });
 }
+
+function getCacheHitRate(record: Record): number | null {
+    if (!record.usage) return null;
+    try {
+        const u = JSON.parse(record.usage);
+        if (u.cache_read_tokens === undefined || u.cache_read_tokens === null) return null;
+        const cacheRead = u.cache_read_tokens;
+        const total = (record.prompt_tokens ?? 0) + cacheRead;
+        if (total <= 0) return 0;
+        return Math.round(cacheRead / total * 100);
+    } catch {
+        return null;
+    }
+}
+
 
 function normalizeTimestamp(value: string | number | null): number | null {
     if (value === null || value === undefined || value === '') {
