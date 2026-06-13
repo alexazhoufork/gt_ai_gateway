@@ -1,24 +1,26 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <!-- 背景：深海军蓝（科技感圆角矩形，更偏向深蓝色） -->
-  <rect width="512" height="512" rx="115" fill="#1e3a8a" />
-  
-  <!-- 外围单层六边形 (整体放大至半径 180，改细至 18) -->
-  <polygon 
-    points="256,76 412,166 412,346 256,436 100,346 100,166" 
-    fill="none" 
-    stroke="#ffffff" 
-    stroke-width="18" 
-    stroke-linejoin="round" 
-  />
+  <g transform="translate(51.2, 51.2) scale(0.8)">
+    <!-- 背景：深海军蓝（科技感圆角矩形，更偏向深蓝色） -->
+    <rect width="512" height="512" rx="115" fill="#1e3a8a" />
+    
+    <!-- 外围单层六边形 (整体放大至半径 180，改细至 18) -->
+    <polygon 
+      points="256,76 412,166 412,346 256,436 100,346 100,166" 
+      fill="none" 
+      stroke="#ffffff" 
+      stroke-width="18" 
+      stroke-linejoin="round" 
+    />
 
-  <!-- 6条连接轮毂的白色辐射直线 (稍微加粗一点至 12，缩小内外反差) -->
-  <line x1="256" y1="256" x2="256" y2="76" stroke="#ffffff" stroke-width="12" stroke-linecap="round" />
-  <line x1="256" y1="256" x2="412" y2="166" stroke="#ffffff" stroke-width="12" stroke-linecap="round" />
-  <line x1="256" y1="256" x2="412" y2="346" stroke="#ffffff" stroke-width="12" stroke-linecap="round" />
-  <line x1="256" y1="256" x2="256" y2="436" stroke="#ffffff" stroke-width="12" stroke-linecap="round" />
-  <line x1="256" y1="256" x2="100" y2="346" stroke="#ffffff" stroke-width="12" stroke-linecap="round" />
-  <line x1="256" y1="256" x2="100" y2="166" stroke="#ffffff" stroke-width="12" stroke-linecap="round" />
+    <!-- 6条连接轮毂的白色辐射直线 (稍微加粗一点至 12，缩小内外反差) -->
+    <line x1="256" y1="256" x2="256" y2="76" stroke="#ffffff" stroke-width="12" stroke-linecap="round" />
+    <line x1="256" y1="256" x2="412" y2="166" stroke="#ffffff" stroke-width="12" stroke-linecap="round" />
+    <line x1="256" y1="256" x2="412" y2="346" stroke="#ffffff" stroke-width="12" stroke-linecap="round" />
+    <line x1="256" y1="256" x2="256" y2="436" stroke="#ffffff" stroke-width="12" stroke-linecap="round" />
+    <line x1="256" y1="256" x2="100" y2="346" stroke="#ffffff" stroke-width="12" stroke-linecap="round" />
+    <line x1="256" y1="256" x2="100" y2="166" stroke="#ffffff" stroke-width="12" stroke-linecap="round" />
 
-  <!-- 中心纯白圆形节点枢纽 -->
-  <circle cx="256" cy="256" r="56" fill="#ffffff" />
+    <!-- 中心纯白圆形节点枢纽 -->
+    <circle cx="256" cy="256" r="56" fill="#ffffff" />
+  </g>
 </svg>
