@@ -163,7 +163,7 @@ pub fn run() {
                 .path()
                 .data_dir()
                 .expect("failed to get data dir")
-                .join("GtGroup")
+                .join("GtCoder")
                 .join("AiGateway");
 
             fs::create_dir_all(&app_data_dir)?;
