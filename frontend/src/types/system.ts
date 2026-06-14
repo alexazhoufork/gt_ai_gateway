@@ -5,6 +5,7 @@ export interface WelcomeResponse {
 export interface SystemStatusInfo {
     environment?: string;
     version?: string;
+    apiAddress?: string;
     startTime?: string;
     uptime?: string;
 }

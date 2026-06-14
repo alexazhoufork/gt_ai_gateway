@@ -23,6 +23,18 @@ function getInstanceStartTime(): Date {
     return INSTANCE_START_TIME;
 }
 
+
+function getApiAddress(c: Context): string {
+    if (ormService.mode === "worker") {
+        return new URL(c.req.url).origin;
+    }
+
+    const hostname = process.env.HOST || "127.0.0.1";
+    const port = process.env.PORT || "8787";
+    return `http://${hostname}:${port}`;
+}
+
+
 function formatUptime(startTime: Date): string {
     const now = new Date();
     const diff = now.getTime() - startTime.getTime();
@@ -72,6 +84,7 @@ async function status(c: Context) {
             system: {
                 environment: getEnvironmentName(),
                 version: packageJson.version,
+                apiAddress: getApiAddress(c),
                 startTime: startTime.toISOString(),
                 uptime: formatUptime(startTime),
             },

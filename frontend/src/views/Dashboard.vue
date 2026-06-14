@@ -131,9 +131,9 @@
                     </span>
                 </div>
                 <div class="system-info-item">
-                    <span class="system-info-label">启动时间</span>
+                    <span class="system-info-label">API 地址</span>
                     <span class="system-info-value">
-                        {{ systemInfo.startTime ? formatDate(systemInfo.startTime) : '-' }}
+                        {{ systemInfo.apiAddress || '-' }}
                     </span>
                 </div>
                 <div class="system-info-item">
@@ -177,7 +177,6 @@ import { listModels } from '@/api/model';
 import { status } from '@/api/system';
 import { useStatsStore } from '@/stores/stats';
 import { useAutoRefresh } from '@/composables/useAutoRefresh';
-import { formatDate } from '@/utils/format';
 import { normalizeListResponse } from '@/utils/listResponse';
 import StatusCard from '@/components/common/StatusCard.vue';
 import StatisticCard from '@/components/common/StatisticCard.vue';
@@ -197,6 +196,7 @@ const systemStatus = ref('正常');
 const systemInfo = ref({
     environment: '',
     version: '',
+    apiAddress: '',
     startTime: '',
     uptime: '',
 });
@@ -293,6 +293,7 @@ async function loadSystemData() {
             systemInfo.value = {
                 environment: systemStatusData.system?.environment || '',
                 version: systemStatusData.system?.version || '',
+                apiAddress: systemStatusData.system?.apiAddress || '',
                 startTime: startTimeStr,
                 uptime: serverStartTime.value ? formatUptime(serverStartTime.value) : '',
             };
