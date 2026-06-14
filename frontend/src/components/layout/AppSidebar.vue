@@ -57,21 +57,38 @@
                 </a-button>
             </div>
             <div v-if="!collapsed" class="footer-right">
-                <span class="version-text">v{{ version }}</span>
+                <a-badge :dot="hasUpdate" :offset="[5, 5]">
+                    <a
+                        v-if="hasUpdate"
+                        :href="updateUrl"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="version-text"
+                        style="color: var(--accent-primary); cursor: pointer;"
+                        title="发现新版本，点击查看"
+                    >
+                        v{{ version }} (发现新版本)
+                    </a>
+                    <span v-else class="version-text">v{{ version }}</span>
+                </a-badge>
             </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { DashboardOutlined, UserOutlined, ApiOutlined, SettingOutlined, FileTextOutlined, ExperimentOutlined, MenuFoldOutlined, MenuUnfoldOutlined, LinkOutlined, DollarOutlined, ControlOutlined } from '@ant-design/icons-vue';
 import { useAppStore } from '@/stores/app';
+import { checkUpdate } from '@/api/system';
 
 const router = useRouter();
 const route = useRoute();
 const appStore = useAppStore();
+
+const hasUpdate = ref(false);
+const updateUrl = ref('');
 
 const collapsed = computed(() => appStore.sidebarCollapsed);
 const version = computed(() => appStore.version);
@@ -93,6 +110,16 @@ onMounted(() => {
     if (!appStore.version) {
         appStore.fetchVersion();
     }
+    
+    // Check for updates
+    checkUpdate().then(status => {
+        hasUpdate.value = status.has_update;
+        if (status.release_url) {
+            updateUrl.value = status.release_url;
+        }
+    }).catch(e => {
+        console.error('Failed to check for updates:', e);
+    });
 });
 
 function handleSelect({ key }: { key: string }) {

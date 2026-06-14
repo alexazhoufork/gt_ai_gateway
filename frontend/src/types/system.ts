@@ -25,3 +25,13 @@ export interface StatusResponse {
     statistics?: SystemStatistics;
     timestamp?: string;
 }
+
+export interface UpdateStatusResponse {
+    success: boolean;
+    has_update: boolean;
+    current_version: string;
+    latest_version: string;
+    release_url?: string;
+    release_notes?: string;
+    error_message?: string;
+}

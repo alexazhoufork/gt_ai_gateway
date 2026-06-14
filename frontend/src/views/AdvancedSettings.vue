@@ -23,6 +23,40 @@
                 </div>
             </div>
 
+            <div class="settings-section">
+                <h3 class="section-title">系统更新</h3>
+                <div class="settings-list">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-title">自动检测更新</div>
+                            <div class="setting-desc">
+                                当前版本：v{{ currentVersion }}
+                                <span v-if="hasUpdate" style="color: var(--accent-primary); margin-left: 8px;">
+                                    (发现新版本：{{ latestVersion }})
+                                </span>
+                                <span v-else-if="checkedUpdate" style="color: var(--text-secondary); margin-left: 8px;">
+                                    (已是最新版本)
+                                </span>
+                            </div>
+                        </div>
+                        <div class="setting-action">
+                            <a-button 
+                                v-if="hasUpdate" 
+                                type="primary" 
+                                :href="updateUrl" 
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                下载更新
+                            </a-button>
+                            <a-button v-else :loading="checkingUpdate" @click="doCheckUpdate">
+                                检查更新
+                            </a-button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="page-actions">
                 <a-button style="margin-right: 12px" :disabled="!isDirty || saving" @click="cancelChanges">
                     取消修改
@@ -39,6 +73,16 @@
 import { onMounted, reactive, ref, computed } from 'vue';
 import { message } from 'ant-design-vue/es';
 import { getConfig, updateConfig } from '@/api/config';
+import { checkUpdate } from '@/api/system';
+import { useAppStore } from '@/stores/app';
+
+const appStore = useAppStore();
+const currentVersion = computed(() => appStore.version);
+const checkingUpdate = ref(false);
+const checkedUpdate = ref(false);
+const hasUpdate = ref(false);
+const updateUrl = ref('');
+const latestVersion = ref('');
 
 const loading = ref(false);
 const saving = ref(false);
@@ -65,6 +109,9 @@ async function loadConfig(): Promise<void> {
         const config = await getConfig();
         form.cch_rewrite_enabled = config.cch_rewrite_enabled === true;
         originalConfig.cch_rewrite_enabled = config.cch_rewrite_enabled === true;
+        if (!appStore.version) {
+            appStore.fetchVersion();
+        }
     } finally {
         loading.value = false;
     }
@@ -74,12 +121,39 @@ function cancelChanges() {
     form.cch_rewrite_enabled = originalConfig.cch_rewrite_enabled;
 }
 
+async function doCheckUpdate() {
+    checkingUpdate.value = true;
+    try {
+        const status = await checkUpdate();
+        if (!status.success) {
+            message.error(status.error_message || '检查更新失败');
+            return;
+        }
+
+        hasUpdate.value = status.has_update;
+        checkedUpdate.value = true;
+        if (status.has_update) {
+            updateUrl.value = status.release_url || '';
+            latestVersion.value = status.latest_version;
+            message.info(`发现新版本 v${status.latest_version}`);
+        } else {
+            message.success('当前已是最新版本');
+        }
+    } catch (e) {
+        message.error('检查更新失败');
+        console.error(e);
+    } finally {
+        checkingUpdate.value = false;
+    }
+}
+
 async function saveConfig(): Promise<void> {
     saving.value = true;
     try {
         const config = await updateConfig({
             cch_rewrite_enabled: form.cch_rewrite_enabled,
         });
+        
         form.cch_rewrite_enabled = config.cch_rewrite_enabled === true;
         originalConfig.cch_rewrite_enabled = config.cch_rewrite_enabled === true;
         message.success('设置已保存');

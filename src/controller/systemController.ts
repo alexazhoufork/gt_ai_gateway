@@ -102,7 +102,15 @@ async function status(c: Context) {
     }
 }
 
+import updateService from "../service/updateService";
+
+async function checkUpdate(c: Context) {
+    const status = await updateService.checkUpdate(c as any);
+    return c.json(status);
+}
+
 export default {
     welcome,
     status,
+    checkUpdate,
 };

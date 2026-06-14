@@ -75,6 +75,7 @@ app.onError((err, c) => {
 // System
 app.get("/welcome", systemController.welcome);
 app.get("/status.json", authMiddleware.requireAdmin, systemController.status);
+app.get("/update.json", authMiddleware.requireAdmin, systemController.checkUpdate);
 app.get("/config.json", authMiddleware.requireAdmin, configController.getConfig);
 app.put("/config.json", authMiddleware.requireAdmin, configController.updateConfig);
 
