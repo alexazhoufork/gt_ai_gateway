@@ -13,6 +13,7 @@
 | **doc/dev/TauriDevManual.md** | Tauri 桌面应用开发手册，包含目录结构、启动流程、Dev/Production 差异、已知问题等 |
 | **doc/dev/TestManual.md** | 测试手册，描述测试环境的架构设计和操作流程 |
 | **doc/usage/LlmApiUsage.md** | LLM API 使用指南，介绍如何调用网关提供的 LLM 接口 |
+| **doc/usage/ProtocolConversion.md** | 自动协议转换说明文档，介绍网关如何自动在 OpenAI 和 Anthropic 协议间转换 |
 | **doc/protocol/OpenAiProtocol.md** | OpenAI Chat Completions 协议说明文档 |
 | **doc/protocol/OpenAiResponsesProtocol.md** | OpenAI Responses API 协议说明文档 |
 | **doc/protocol/AnthropicProtocol.md** | Anthropic 协议说明文档 |
