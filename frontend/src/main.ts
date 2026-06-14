@@ -8,15 +8,49 @@ import { setBaseURL } from './utils/request';
 import { setAuthToken } from './utils/authSession';
 import posthog from 'posthog-js';
 
-async function bootstrap() {
-    // Desktop 模式下，Splash Screen 已经将参数存入 localStorage
+function loadBrowserStoredConfig(): void {
     const storedUrl = localStorage.getItem('backendBaseURL');
     if (storedUrl) {
         setBaseURL(storedUrl);
     }
+
     const token = localStorage.getItem('adminToken');
     if (token) {
         setAuthToken(token);
+    }
+}
+
+async function loadDesktopRuntimeConfig(): Promise<boolean> {
+    const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+    if (!isTauri) {
+        return false;
+    }
+
+    try {
+        const { invoke } = await import('@tauri-apps/api/core');
+        const [url, token] = await Promise.all([
+            invoke<string>('get_backend_url'),
+            invoke<string>('get_auth_token'),
+        ]);
+
+        if (url) {
+            setBaseURL(url);
+        }
+
+        if (token) {
+            setAuthToken(token, { persist: false });
+        }
+    } catch (e) {
+        console.error('Failed to load desktop runtime config:', e);
+    }
+
+    return true;
+}
+
+async function bootstrap() {
+    const loadedDesktopConfig = await loadDesktopRuntimeConfig();
+    if (!loadedDesktopConfig) {
+        loadBrowserStoredConfig();
     }
 
     const app = createApp(App);

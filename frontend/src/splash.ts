@@ -126,13 +126,6 @@ async function initSplash() {
             throw new Error("Backend failed to start within 15 seconds.");
         }
 
-        // Backend is ready, fetch token
-        const token = await invoke<string>('get_auth_token');
-        
-        // Save to localStorage for the Vue app to pick up
-        localStorage.setItem('adminToken', token);
-        localStorage.setItem('backendBaseURL', url);
-
         // 如果配置了环境变量 VITE_SPLASH_DELAY_SEC，则人为增加对应秒数的延迟
         const delaySec = Number(import.meta.env.VITE_SPLASH_DELAY_SEC) || 0;
         if (delaySec > 0) {
