@@ -4,7 +4,7 @@
     "identifier": "com.gtcoder.aigateway",
     "build": {
         "frontendDist": "../../frontend/dist",
-        "devUrl": "http://localhost:5173",
+        "devUrl": "http://localhost:8721",
         "beforeDevCommand": "cd ../frontend && npm run dev",
         "beforeBuildCommand": "cd .. && npm run tauri:build-sidecar-backend && cd frontend && npm run build:tauri"
     },

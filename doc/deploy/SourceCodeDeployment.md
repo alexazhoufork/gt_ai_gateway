@@ -42,8 +42,8 @@ cp .env.example .env
 # 超级管理员的登录密码，建议修改为您的专属密码
 ROOT_TOKEN=your-secret-root-token
 
-# 服务运行端口，默认 8787
-PORT=8787
+# 服务运行端口，默认 8720
+PORT=8720
 
 # SQLite 数据库的存放路径（默认为根目录的 local.db）
 DB_PATH=local.db
@@ -61,17 +61,17 @@ DB_PATH=local.db
 
 **终端 1：启动后端**
 ```bash
-# 这会在本地启动后端 API 和 SQLite 数据库，监听 8787 端口
+# 这会在本地启动后端 API 和 SQLite 数据库，监听 8720 端口
 npm run backend:dev:local
 ```
 
 **终端 2：启动前端**
 ```bash
-# 这会启动前端 Vite 开发服务器，通常监听 5173 端口
+# 这会启动前端 Vite 开发服务器，监听 8721 端口
 npm run frontend:dev
 ```
 
-在浏览器中访问 `http://localhost:5173` 即可打开带热更新的系统后台。
+在浏览器中访问 `http://localhost:8721` 即可打开带热更新的系统后台。
 
 ---
 
@@ -91,7 +91,7 @@ npm run frontend:build
 npm run backend:start:node
 ```
 
-在浏览器中访问 `http://localhost:8787` 即可打开系统管理后台。
+在浏览器中访问 `http://localhost:8720` 即可打开系统管理后台。
 
 为了保证服务在后台常驻运行且在崩溃后自动重启，推荐配合 [PM2](https://pm2.keymetrics.io/) 来管理生产模式进程：
 ```bash

@@ -30,7 +30,7 @@ function getApiAddress(c: Context): string {
     }
 
     const hostname = process.env.HOST || "127.0.0.1";
-    const port = process.env.PORT || "8787";
+    const port = process.env.PORT || "8720";
     return `http://${hostname}:${port}`;
 }
 

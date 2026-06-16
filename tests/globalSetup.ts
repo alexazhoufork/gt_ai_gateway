@@ -221,7 +221,7 @@ function startTestServer(): Promise<void> {
             if (!serverStarted) {
                 if (isWorkerMode) {
                     // Wrangler dev typically outputs something like:
-                    // "Ready on http://localhost:8787" or contains "Ready"
+                    // "Ready on http://localhost:8720" or contains "Ready"
                     if (
                         output.includes("Ready") ||
                         output.includes("localhost:" + port)

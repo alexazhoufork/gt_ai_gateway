@@ -17,16 +17,16 @@ const REAL_API_MODE = process.env.TEST_REAL_API === "true";
  * Node Mode Server Configuration
  */
 const NODE_SERVER_CONFIG = {
-    baseUrl: process.env.TEST_BASE_URL || "http://localhost:3000",
-    port: parseInt(process.env.TEST_PORT || "3000", 10),
+    baseUrl: process.env.TEST_BASE_URL || "http://localhost:8720",
+    port: parseInt(process.env.TEST_PORT || "8720", 10),
 };
 
 /**
  * Worker Mode Server Configuration
  */
 const WORKER_SERVER_CONFIG = {
-    baseUrl: "http://localhost:8787",
-    port: 8787,
+    baseUrl: "http://localhost:8720",
+    port: 8720,
 };
 
 /**
@@ -39,7 +39,7 @@ const SERVER_CONFIG =
  * Worker Configuration
  */
 const WORKER_CONFIG = {
-    port: 8787,
+    port: 8720,
     startupTimeout: 30000, // 30 seconds for wrangler dev startup
 };
 

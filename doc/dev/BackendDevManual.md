@@ -55,7 +55,7 @@ npm install
 ```bash
 # .dev.vars
 ROOT_TOKEN=root-token-123
-PORT=8787
+PORT=8720
 RECORD_LOG_ENABLED=false
 STREAM_LOG_ENABLED=false
 ```
@@ -91,7 +91,7 @@ STREAM_LOG_ENABLED=false
 npm run backend:dev:local
 ```
 
-Node 模式使用本地 SQLite 数据库，运行在 `http://localhost:8787`，并会在后端代码变更后自动重启。
+Node 模式使用本地 SQLite 数据库，运行在 `http://localhost:8720`，并会在后端代码变更后自动重启。
 
 #### 前后端联合开发建议
 

@@ -43,13 +43,13 @@ export default defineConfig({
         },
     },
     server: {
-        port: 5173,
-        strictPort: true, // 如果 5173 被占用，直接报错退出，不再尝试下一个端口
+        port: 8721,
+        strictPort: true, // 如果 8721 被占用，直接报错退出，不再尝试下一个端口
         host: '127.0.0.1',
         allowedHosts: true,
         proxy: {
             '/api': {
-                target: 'http://localhost:8787',
+                target: 'http://localhost:8720',
                 changeOrigin: true,
                 rewrite: (path) => path.replace(/^\/api/, ''),
             },

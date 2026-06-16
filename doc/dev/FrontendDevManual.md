@@ -57,7 +57,7 @@ npm install
 
 ```bash
 # frontend/.env.development
-VITE_API_BASE_URL=http://localhost:8787
+VITE_API_BASE_URL=http://localhost:8720
 VITE_APP_TITLE=Serverless AI Gateway (Dev)
 ```
 
@@ -74,7 +74,7 @@ VITE_APP_TITLE=Serverless AI Gateway (Dev)
 npm run frontend:dev
 ```
 
-前端开发服务器默认运行在 `http://localhost:5173`
+前端开发服务器默认运行在 `http://localhost:8721`
 
 ### 前后端联合开发
 
@@ -105,7 +105,7 @@ npm run frontend:dev
 
 ```bash
 # frontend/.env.development - 开发环境
-VITE_API_BASE_URL=http://localhost:8787
+VITE_API_BASE_URL=http://localhost:8720
 VITE_APP_TITLE=Serverless AI Gateway (Dev)
 
 # frontend/.env.production - 生产环境
@@ -133,7 +133,7 @@ const instance: AxiosInstance = axios.create({
 
 | 场景 | VITE_API_BASE_URL 配置 | 说明 |
 |------|------------------------|------|
-| **本地开发（分离端口）** | `http://localhost:8787` | 前端 5173，后端 8787 |
+| **本地开发（分离端口）** | `http://localhost:8720` | 前端 8721，后端 8720 |
 | **本地开发（集成模式）** | `/api` | 前后端同端口，通过代理转发 |
 | **生产环境** | `/api` | 前后端同源部署，使用相对路径 |
 

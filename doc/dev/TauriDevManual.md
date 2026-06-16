@@ -39,7 +39,7 @@ npm run tauri dev
 
 | 项目 | 值 |
 |------|------|
-| 前端来源 | Vite dev server（`http://localhost:5173`） |
+| 前端来源 | Vite dev server（`http://localhost:8721`） |
 | Rust 可执行文件 | `tauri/build/target/debug/ai-gateway` |
 | Sidecar 路径 | `tauri/build/target/debug/ai-gateway-backend` |
 | Resource 目录 | `tauri/build/target/debug/../Resources/resource` ❌ **不存在** |
@@ -100,7 +100,7 @@ Tauri Rust 在启动 sidecar 时传入以下环境变量：
 | 环境变量 | 来源 | 说明 |
 |----------|------|------|
 | `DB_PATH` | `app_data_dir/gateway.db` | 数据库文件路径 |
-| `PORT` | `config.json` 或默认 `8787` | 后端监听端口 |
+| `PORT` | `config.json` 或默认 `8720` | 后端监听端口 |
 | `HOST` | `config.json` 或默认 `127.0.0.1` | 后端监听地址 |
 | `LOG_DIR` | `app_data_dir/logs` | 日志输出目录 |
 | `ROOT_TOKEN` | `config.json`（首次自动生成） | 管理员认证令牌 |
@@ -122,7 +122,7 @@ Tauri Rust 在启动 sidecar 时传入以下环境变量：
 | localStorage Key | 用途 | 写入方 | 读取方 |
 |------------------|------|--------|--------|
 | `adminToken` | root_token，用于 API 认证 | splash.ts | main.ts → authSession.ts |
-| `backendBaseURL` | 后端 URL（如 `http://127.0.0.1:8787`） | splash.ts | main.ts → request.ts |
+| `backendBaseURL` | 后端 URL（如 `http://127.0.0.1:8720`） | splash.ts | main.ts → request.ts |
 
 ## Tauri 配置要点 (tauri.conf.json)
 
@@ -130,7 +130,7 @@ Tauri Rust 在启动 sidecar 时传入以下环境变量：
 {
     "build": {
         "frontendDist": "../../frontend/dist",      // 生产模式前端产物
-        "devUrl": "http://localhost:5173",           // dev 模式 Vite 地址
+        "devUrl": "http://localhost:8721",           // dev 模式 Vite 地址
         "beforeDevCommand": "cd ../frontend && npm run dev",
         "beforeBuildCommand": "cd ../frontend && npm run build:tauri"
     },
@@ -226,7 +226,7 @@ Tauri 通过 **PTY (伪终端)** 管理后端进程的生命周期：
 
 | Exit Code | 含义 | Splash 显示 |
 |-----------|------|-------------|
-| `98` | 端口被占用 (`EADDRINUSE`) | "后端 **8787** 端口被占用。请清理占用端口的进程，或者修改配置文件中的服务端口。" |
+| `98` | 端口被占用 (`EADDRINUSE`) | "后端 **8720** 端口被占用。请清理占用端口的进程，或者修改配置文件中的服务端口。" |
 | 其他非零 | 异常退出 | "后端异常退出 (代码：{code})" |
 | `0` | 正常运行中 | 不触发错误 |
 
