@@ -5,10 +5,15 @@ import sys
 import shlex
 import shutil
 import json
+import time
 
 def run_command(command):
-    print(f"🚀 Executing: {' '.join(shlex.quote(str(s)) for s in command)}")
+    cmd_str = ' '.join(shlex.quote(str(s)) for s in command)
+    print(f"🚀 Executing: {cmd_str}")
+    start = time.time()
     process = subprocess.run(command)
+    elapsed = time.time() - start
+    print(f"⏱️  Finished in {elapsed:.1f}s (exit code: {process.returncode})")
     if process.returncode != 0:
         print(f"❌ Error: Command failed with code {process.returncode}", file=sys.stderr)
         sys.exit(process.returncode)
@@ -49,11 +54,26 @@ def main():
         print(f"❌ Error: {entitlements_path} not found!")
         sys.exit(1)
     
-    # 2. Deep sign the app
-    # 2.1 First, sign the sidecar and any frameworks explicitly just in case
+    # 2. Diagnostic: print environment and keychain info
+    print(f"\n--- Diagnostics ---")
+    print(f"Target: {target}")
+    print(f"App path: {app_path}")
+    print(f"Python arch: {subprocess.run(['python3', '-c', 'import platform; print(platform.machine())'], capture_output=True, text=True).stdout.strip()}")
+    print(f"macOS version: {subprocess.run(['sw_vers', '-productVersion'], capture_output=True, text=True).stdout.strip()}")
+    # List keychains and check keychain status
+    print("\nKeychain list:")
+    subprocess.run(["security", "list-keychains"])
+    print("\nDefault keychain:")
+    subprocess.run(["security", "default-keychain"])
+    print("\nKeychain lock status:")
+    subprocess.run(["security", "show-keychain-info", "build.keychain"], capture_output=False)
+
+    # 2.1 Deep sign the app
+    # First, sign the sidecar and any frameworks explicitly just in case
     backend_path = os.path.join(app_path, "Contents", "MacOS", "ai-gateway-backend")
     if os.path.exists(backend_path):
-        print("\n--- Signing backend sidecar explicitly ---")
+        file_size = os.path.getsize(backend_path)
+        print(f"\n--- Signing backend sidecar explicitly (size: {file_size / 1024 / 1024:.1f} MB) ---")
         run_command(["codesign", "--force", "--options=runtime", "--entitlements", entitlements_path, "--sign", cert_name, backend_path])
         
     # 2.2 Sign framework dylibs if any
