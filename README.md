@@ -106,7 +106,7 @@ docker run -d \
 
 ---
 
-*本软件由人类进行架构设计，[TogoSpace AI Team](https://github.com/alexazhou/TogoSpace) 进行开发，通过 500+ 测试用例对功能进行全面覆盖，确保高质量的代码实现。*
+*本软件由人类进行架构设计，[TogoSpace AI Team](https://github.com/alexazhou/TogoSpace) 主力开发，通过 500+ 测试用例对功能进行全面覆盖，确保高质量的代码实现。*
 
 *点击 [TogoSpace](https://github.com/alexazhou/TogoSpace)，即刻拥有你专属的 AI 团队。*
 
