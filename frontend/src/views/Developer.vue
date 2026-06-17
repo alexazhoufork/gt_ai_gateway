@@ -25,6 +25,23 @@
                 </div>
             </div>
 
+            <div class="settings-section">
+                <h3 class="section-title" style="color: var(--error-color, #ff4d4f)">危险操作</h3>
+                <div class="settings-list">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-title">退出开发者模式</div>
+                            <div class="setting-desc">关闭开发者选项并隐藏此页面。</div>
+                        </div>
+                        <div class="setting-action">
+                            <a-button danger @click="exitDeveloperMode">
+                                退出开发者模式
+                            </a-button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="page-actions">
                 <a-button style="margin-right: 12px" :disabled="!isDirty || saving" @click="cancelChanges">
                     取消修改
@@ -39,9 +56,13 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue/es';
 import { getConfig, updateConfig } from '@/api/config';
+import { useAppStore } from '@/stores/app';
 
+const router = useRouter();
+const appStore = useAppStore();
 const loading = ref(false);
 const saving = ref(false);
 
@@ -91,6 +112,12 @@ async function saveConfig(): Promise<void> {
     } finally {
         saving.value = false;
     }
+}
+
+function exitDeveloperMode() {
+    appStore.disableDeveloperMode();
+    message.success('已退出开发者模式');
+    router.push('/dashboard');
 }
 </script>
 

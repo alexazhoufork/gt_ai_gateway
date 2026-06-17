@@ -19,6 +19,11 @@ export const useAppStore = defineStore('app', () => {
         localStorage.setItem('developerMode', 'true');
     }
 
+    function disableDeveloperMode() {
+        isDeveloperMode.value = false;
+        localStorage.removeItem('developerMode');
+    }
+
     async function fetchVersion() {
         try {
             const data = await status();
@@ -34,6 +39,7 @@ export const useAppStore = defineStore('app', () => {
         isDeveloperMode,
         toggleSidebar,
         enableDeveloperMode,
+        disableDeveloperMode,
         fetchVersion,
     };
 });

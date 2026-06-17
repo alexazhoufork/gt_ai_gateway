@@ -1,7 +1,9 @@
 import { Context } from "hono";
 import configService from "../service/configService";
+import hostService from "../service/hostService";
 
 async function getConfig(c: Context) {
+    await hostService.getHostKey();
     return c.json(await configService.getAll());
 }
 
