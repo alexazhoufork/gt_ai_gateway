@@ -164,7 +164,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path $portableDir | Out-Null
           
           # Main exe
-          $releaseDirs = @("tauri\src-tauri\target\release", "tauri\src-tauri\target\x86_64-pc-windows-msvc\release")
+          $releaseDirs = @("tauri\build\target\release", "tauri\build\target\x86_64-pc-windows-msvc\release")
           $mainExeFound = $false
           foreach ($dir in $releaseDirs) {
               if (Test-Path $dir) {
