@@ -91,7 +91,7 @@ npx wrangler secret put ROOT_TOKEN
 ### 5. 发布上线
 
 ```bash
-npm run backend:deploy
+npm run deploy:cloudflare
 ```
 
 部署成功后，控制台会输出一个类似 `https://serverless-ai-gateway.your-subdomain.workers.dev` 的访问链接。
