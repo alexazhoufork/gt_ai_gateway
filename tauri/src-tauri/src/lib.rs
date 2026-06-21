@@ -148,12 +148,7 @@ fn read_config(app_data_dir: &Path) -> AppConfig {
 
 fn show_main_window(app: &tauri::AppHandle) {
     println!("RUST: show_main_window called");
-    // Also write to file for safety
-    let log_path = std::path::Path::new("C:\\Users\\111\\gt_ai_gateway\\rust_bootstrap.log");
-    match std::fs::write(log_path, "show_main_window_called\n") {
-        Ok(_) => println!("RUST: show_main_window debug log written"),
-        Err(e) => println!("RUST: FAILED to write debug log: {}", e),
-    }
+
     if let Some(window) = app.get_webview_window("main") {
         println!("RUST: found existing main window, showing it");
         let _ = window.show();
@@ -250,10 +245,7 @@ pub fn run() {
                             if line_str.contains("Server listening on") {
                                 BACKEND_IS_READY.store(true, Ordering::SeqCst);
                                 let _ = app_handle_clone.emit("backend-ready", ());
-                                match std::fs::write("C:\\Users\\111\\gt_ai_gateway\\rust_bootstrap.log", "backend_ready_event_emitted\n") {
-                                    Ok(_) => println!("RUST: backend-ready debug log written"),
-                                    Err(e) => println!("RUST: FAILED to write backend-ready debug log: {}", e),
-                                }
+
                             }
                         } else if let Err(e) = line {
                             println!("RUST STDOUT READ ERROR: {:?}", e);
