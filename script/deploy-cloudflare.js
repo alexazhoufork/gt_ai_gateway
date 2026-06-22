@@ -107,15 +107,46 @@ function getConfiguredD1Binding() {
 
 function updateDatabaseId(databaseId) {
     const toml = readWranglerConfig();
-    const nextToml = toml.replace(
-        /database_id\s*=\s*".*?"/,
-        `database_id = "${databaseId}"`,
+    let nextToml = toml.replace(
+        /^(\s*)database_id\s*=\s*".*?"/m,
+        `$1database_id = "${databaseId}"`,
     );
 
-    if (nextToml === toml) {
-        throw new Error(`Could not find database_id in ${WRANGLER_CONFIG_PATH}`);
+    if (nextToml !== toml) {
+        fs.writeFileSync(WRANGLER_CONFIG_PATH, nextToml);
+        return;
     }
 
+    const d1BlockStart = toml.indexOf("[[d1_databases]]");
+    if (d1BlockStart === -1) {
+        throw new Error(`Could not find [[d1_databases]] in ${WRANGLER_CONFIG_PATH}`);
+    }
+
+    const d1BlockHeaderEnd = d1BlockStart + "[[d1_databases]]".length;
+    const nextTableMatch = toml.slice(d1BlockHeaderEnd).match(/\n\[/);
+    const d1BlockEnd = nextTableMatch
+        ? d1BlockHeaderEnd + nextTableMatch.index
+        : toml.length;
+    const d1Block = toml.slice(d1BlockStart, d1BlockEnd);
+    const databaseIdLine = `database_id = "${databaseId}"`;
+    let nextD1Block = d1Block.replace(
+        /^(\s*database_name\s*=\s*".*?")\s*$/m,
+        `$1\n${databaseIdLine}`,
+    );
+
+    if (nextD1Block === d1Block) {
+        nextD1Block = d1Block.replace(
+            /^(\s*binding\s*=\s*".*?")\s*$/m,
+            `$1\n${databaseIdLine}`,
+        );
+    }
+
+    if (nextD1Block === d1Block) {
+        const separator = d1Block.endsWith("\n") ? "" : "\n";
+        nextD1Block = `${d1Block}${separator}${databaseIdLine}`;
+    }
+
+    nextToml = `${toml.slice(0, d1BlockStart)}${nextD1Block}${toml.slice(d1BlockEnd)}`;
     fs.writeFileSync(WRANGLER_CONFIG_PATH, nextToml);
 }
 
