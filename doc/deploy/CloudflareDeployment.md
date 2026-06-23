@@ -10,7 +10,7 @@
 
 1. **点击一键部署**：
    在项目的 README 页面，点击下面这个按钮：
-   [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/alexazhou/serverless_ai_gateway/tree/feature/cloudflare-deploy-action)
+   [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/alexazhou/serverless_ai_gateway)
 
 2. **授权并选择资源**：
    - 网页会引导您授权 GitHub 账号，自动将代码 Fork 到您的名下。
@@ -75,9 +75,9 @@ database_id = "这里填入你刚刚生成的 database_id"
 
 将数据库的 Schema 和表结构应用到远程生产环境：
 ```bash
-npx wrangler d1 migrations apply gt_ai_gateway --remote
+npm run db:migrate:worker-cloud
 ```
-*遇到提示时输入 `y` 确认执行。*
+该命令会通过 `wrangler.toml` 中的 `DB` binding 连接远程 D1，并执行项目内置的 `resource/migrate` 迁移脚本。
 
 ### 4. 配置 ROOT_TOKEN
 
