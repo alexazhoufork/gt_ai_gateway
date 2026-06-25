@@ -47,48 +47,45 @@
                                 </div>
                                 <div class="config-row-list">
                                     <div class="config-row current-config-row">
+                                        <CheckCircleFilled class="current-config-icon" />
                                         <div class="config-row-content">
                                             <div class="config-row-name config-row-name-with-action">
                                                 <span>{{ getCurrentConfigName(client) }}</span>
-                                                <a-tag color="blue" class="current-config-tag">当前配置</a-tag>
-                                            </div>
-                                            <div class="config-line">
-                                                <span class="config-label">文件</span>
-                                                <div class="config-path-list">
-                                                    <span
-                                                        v-for="path in client.configPaths"
-                                                        :key="path"
-                                                        class="config-path"
-                                                    >
-                                                        {{ path }}
-                                                    </span>
-                                                </div>
                                             </div>
                                             <template v-if="client.currentConfig">
-                                                <div class="config-line">
-                                                    <span class="config-label">后端</span>
-                                                    <span class="config-path">{{ client.currentConfig.backendUrl }}</span>
-                                                </div>
-                                                <div class="config-line">
-                                                    <span class="config-label">Token</span>
-                                                    <TokenDisplay :token="client.currentConfig.token" />
-                                                    <a-tag
-                                                        v-if="client.currentConfig.gatewayUser"
-                                                        color="blue"
-                                                        class="matched-user-tag"
-                                                    >
-                                                        {{ client.currentConfig.gatewayUser.name }}
-                                                        · {{ getUserTypeLabel(client.currentConfig.gatewayUser.type as UserType) }}
-                                                        · {{ client.currentConfig.gatewayUser.status === 'active' ? '启用' : '禁用' }}
-                                                    </a-tag>
+                                                <div class="config-summary-line">
+                                                    <div class="config-flow">
+                                                        <a-tag :color="getConnectionModeColor(client.currentConfig.connectionMode)" class="merged-mode-tag">
+                                                            {{ getConnectionModeLabel(client.currentConfig.connectionMode) }}
+                                                        </a-tag>
+                                                        <template v-if="isGatewayConfig(client.currentConfig)">
+                                                            <span>🤖</span>
+                                                            <ArrowRightOutlined class="flow-arrow" />
+                                                            <img src="/favicon.svg" class="flow-logo" alt="Gateway" />
+                                                            <ArrowRightOutlined class="flow-arrow" />
+                                                            <span>☁️</span>
+                                                        </template>
+                                                        <template v-else>
+                                                            <span>🤖</span>
+                                                            <ArrowRightOutlined class="flow-arrow" />
+                                                            <span>☁️</span>
+                                                        </template>
+                                                    </div>
                                                 </div>
                                             </template>
-                                            <div v-else class="config-line">
-                                                <span class="config-label">状态</span>
+                                            <div v-else class="config-summary-line">
+                                                <a-tag color="default">未配置</a-tag>
                                                 <span class="config-muted">未检测到有效配置</span>
                                             </div>
                                         </div>
                                         <div class="config-row-actions">
+                                            <a-button
+                                                :disabled="!client.currentConfig"
+                                                @click="openDetailDialog(client, client.currentConfig, getCurrentConfigName(client))"
+                                            >
+                                                <InfoCircleOutlined />
+                                                查看
+                                            </a-button>
                                             <a-button
                                                 type="primary"
                                                 :disabled="!client.installed"
@@ -114,6 +111,7 @@
                                         :key="backup.id"
                                         class="config-row saved-config-row"
                                     >
+                                        <div class="icon-placeholder"></div>
                                         <div class="config-row-content">
                                             <div class="config-row-name config-row-name-with-action">
                                                 <span>{{ backup.name }}</span>
@@ -126,11 +124,38 @@
                                                     <EditOutlined />
                                                 </a-button>
                                             </div>
-                                            <div class="backup-detail">
-                                                {{ backup.fileCount }} 个文件 · {{ formatBackupTime(backup.createdAt) }}
+                                            <div v-if="backup.config" class="config-summary-line">
+                                                <div class="config-flow">
+                                                    <a-tag :color="getConnectionModeColor(backup.config.connectionMode)" class="merged-mode-tag">
+                                                        {{ getConnectionModeLabel(backup.config.connectionMode) }}
+                                                    </a-tag>
+                                                    <template v-if="isGatewayConfig(backup.config)">
+                                                        <span>🤖</span>
+                                                        <ArrowRightOutlined class="flow-arrow" />
+                                                        <img src="/favicon.svg" class="flow-logo" alt="Gateway" />
+                                                        <ArrowRightOutlined class="flow-arrow" />
+                                                        <span>☁️</span>
+                                                    </template>
+                                                    <template v-else>
+                                                        <span>🤖</span>
+                                                        <ArrowRightOutlined class="flow-arrow" />
+                                                        <span>☁️</span>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                            <div v-else class="config-summary-line">
+                                                <a-tag color="default">未配置</a-tag>
+                                                <span class="config-muted">未检测到有效配置</span>
                                             </div>
                                         </div>
                                         <div class="config-row-actions">
+                                            <a-button
+                                                :disabled="!backup.config"
+                                                @click="openDetailDialog(client, backup.config, backup.name)"
+                                            >
+                                                <InfoCircleOutlined />
+                                                查看
+                                            </a-button>
                                             <a-button
                                                 type="link"
                                                 :loading="restoringBackupId === backup.id"
@@ -142,6 +167,7 @@
                                     </div>
 
                                     <div v-if="client.backups.length === 0" class="config-row empty-config-row">
+                                        <div class="icon-placeholder"></div>
                                         <div class="config-row-content">
                                             <div class="config-row-name">暂无配置</div>
                                             <span class="config-muted">暂无已保存配置</span>
@@ -322,6 +348,75 @@
         </a-modal>
 
         <a-modal
+            v-model:open="detailDialogVisible"
+            :title="detailDialogTitle"
+            :footer="null"
+            width="560px"
+        >
+            <a-empty v-if="!detailConfig" description="未检测到有效配置" />
+            <a-form v-else layout="vertical" class="config-form readonly-config-form">
+                <a-form-item label="客户端">
+                    <a-input :value="detailClientName" disabled />
+                </a-form-item>
+                <a-form-item label="配置名称">
+                    <a-input :value="detailConfigName" disabled />
+                </a-form-item>
+                <a-tabs
+                    :activeKey="detailConfig.connectionMode"
+                    class="connection-tabs"
+                >
+                    <a-tab-pane key="gateway" tab="通过 GT AI Gateway" :disabled="detailConfig.connectionMode !== 'gateway'">
+                        <a-form-item label="协议">
+                            <a-input :value="getProtocolLabel(detailConfig.protocol)" disabled />
+                        </a-form-item>
+                        <a-form-item label="服务端地址">
+                            <a-input :value="detailConfig.backendUrl" disabled />
+                        </a-form-item>
+                        <a-form-item label="用户">
+                            <div class="readonly-field">
+                                <a-tag v-if="detailConfig.gatewayUser" color="blue">
+                                    {{ getGatewayUserLabel(detailConfig) }}
+                                </a-tag>
+                                <span v-else class="config-muted">未匹配网关用户</span>
+                            </div>
+                        </a-form-item>
+                        <a-form-item label="模型">
+                            <a-input :value="detailConfig.model" disabled />
+                        </a-form-item>
+                        <a-form-item label="Token">
+                            <div class="readonly-field">
+                                <TokenDisplay :token="detailConfig.token" />
+                            </div>
+                        </a-form-item>
+                        <a-form-item label="配置文件">
+                            <a-input :value="detailConfig.configPath" disabled />
+                        </a-form-item>
+                    </a-tab-pane>
+
+                    <a-tab-pane key="vendor" tab="直连上游供应商" :disabled="detailConfig.connectionMode !== 'vendor'">
+                        <a-form-item label="协议">
+                            <a-input :value="getProtocolLabel(detailConfig.protocol)" disabled />
+                        </a-form-item>
+                        <a-form-item label="上游地址">
+                            <a-input :value="detailConfig.backendUrl" disabled />
+                        </a-form-item>
+                        <a-form-item label="模型">
+                            <a-input :value="detailConfig.model" disabled />
+                        </a-form-item>
+                        <a-form-item label="Token">
+                            <div class="readonly-field">
+                                <TokenDisplay :token="detailConfig.token" />
+                            </div>
+                        </a-form-item>
+                        <a-form-item label="配置文件">
+                            <a-input :value="detailConfig.configPath" disabled />
+                        </a-form-item>
+                    </a-tab-pane>
+                </a-tabs>
+            </a-form>
+        </a-modal>
+
+        <a-modal
             v-model:open="renameDialogVisible"
             title="修改配置名称"
             :confirm-loading="renamingBackupId === renameForm.backupId"
@@ -342,7 +437,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { message, Modal } from 'ant-design-vue/es';
-import { CopyOutlined, EditOutlined, InfoCircleOutlined, ReloadOutlined, ToolOutlined } from '@ant-design/icons-vue';
+import { ArrowRightOutlined, CheckCircleFilled, CopyOutlined, EditOutlined, InfoCircleOutlined, ReloadOutlined, ToolOutlined } from '@ant-design/icons-vue';
 import {
     applyClientConfig,
     createClientConfigBackup,
@@ -351,7 +446,13 @@ import {
     restoreClientConfig,
 } from '@/api/clientConfig';
 import { ClientName } from '@/types/clientConfig';
-import type { ClientConfigBackupInfo, ClientConfigStatus, ClientConnectionMode, ClientProtocol } from '@/types/clientConfig';
+import type {
+    ClientConfigBackupInfo,
+    ClientConfigStatus,
+    ClientConnectionMode,
+    ClientProtocol,
+    CurrentClientConfig,
+} from '@/types/clientConfig';
 import { getBaseURL } from '@/utils/request';
 import { listUsers } from '@/api/user';
 import { listModels } from '@/api/model';
@@ -380,6 +481,10 @@ const vendorPresetUrls = ref<Record<string, Record<string, string>>>({});
 const selectedClient = ref<ClientConfigStatus | null>(null);
 const configDialogVisible = ref(false);
 const renameDialogVisible = ref(false);
+const detailDialogVisible = ref(false);
+const detailConfig = ref<CurrentClientConfig | null>(null);
+const detailClientName = ref('');
+const detailConfigName = ref('');
 
 const configForm = reactive<{
     client: ClientName | '';
@@ -426,6 +531,7 @@ const clientProtocolLabels: Record<ClientName, string> = {
 const enabledModels = computed(() => models.value.filter(model => model.enable));
 const selectedProtocolLabel = computed(() => selectedClient.value ? clientProtocolLabels[selectedClient.value.client] : '');
 const configDialogTitle = computed(() => selectedClient.value ? `配置 ${selectedClient.value.displayName}` : '配置客户端');
+const detailDialogTitle = computed(() => detailConfigName.value ? `配置详情：${detailConfigName.value}` : '配置详情');
 
 onMounted(() => {
     void loadStatus();
@@ -687,6 +793,36 @@ function getUserTypeColor(type?: UserType): string {
     return 'default';
 }
 
+function getConnectionModeLabel(mode?: ClientConnectionMode): string {
+    if (mode === 'gateway') return '代理模式';
+    if (mode === 'vendor') return '直连模式';
+    return '未配置';
+}
+
+function getConnectionModeColor(mode?: ClientConnectionMode): string {
+    if (mode === 'gateway') return 'blue';
+    if (mode === 'vendor') return 'green';
+    return 'default';
+}
+
+function isGatewayConfig(config?: CurrentClientConfig | null): boolean {
+    return config?.connectionMode === 'gateway';
+}
+
+function getGatewayUserLabel(config: CurrentClientConfig): string {
+    const user = config.gatewayUser;
+    if (!user) return '未匹配网关用户';
+    const typeLabel = getUserTypeLabel(user.type as UserType);
+    const statusLabel = user.status === 'active' ? '启用' : '禁用';
+    return `${user.name} · ${typeLabel} · ${statusLabel}`;
+}
+
+function getProtocolLabel(protocol?: ClientProtocol): string {
+    if (protocol === 'anthropic') return 'Anthropic';
+    if (protocol === 'responses') return 'OpenAI Responses';
+    return '';
+}
+
 function getVendorTypeLabel(type?: VendorType): string {
     if (!type) return '';
     const labels: Record<VendorType, string> = {
@@ -736,6 +872,13 @@ function getVendorTypeTagStyle(type?: VendorType) {
 
 function getCurrentConfigName(client: ClientConfigStatus): string {
     return client.currentConfig?.model || `${client.displayName} 配置`;
+}
+
+function openDetailDialog(client: ClientConfigStatus, config: CurrentClientConfig | null, name: string): void {
+    detailClientName.value = client.displayName;
+    detailConfigName.value = name;
+    detailConfig.value = config;
+    detailDialogVisible.value = true;
 }
 
 async function backupCurrentConfig(client: ClientName, showSuccess = true): Promise<void> {
@@ -819,15 +962,7 @@ function restoreConfig(client: ClientName, backupId?: number): void {
     });
 }
 
-function formatBackupTime(value: string): string {
-    if (!value) return '';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-        return value;
-    }
 
-    return date.toLocaleString();
-}
 
 function updateClientStatus(status: ClientConfigStatus): void {
     const index = clients.value.findIndex(item => item.client === status.client);
@@ -954,8 +1089,13 @@ function updateBackupInfo(backup: ClientConfigBackupInfo): void {
     border-radius: 8px;
     display: grid;
     gap: 16px;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     padding: 12px 16px;
+}
+
+.icon-placeholder {
+    width: 20px;
+    height: 20px;
 }
 
 .config-row-name {
@@ -976,8 +1116,9 @@ function updateBackupInfo(backup: ClientConfigBackupInfo): void {
     flex-shrink: 0;
 }
 
-.current-config-tag {
-    margin: 0;
+.current-config-icon {
+    color: #1677ff;
+    font-size: 20px;
     flex-shrink: 0;
 }
 
@@ -992,6 +1133,13 @@ function updateBackupInfo(backup: ClientConfigBackupInfo): void {
     gap: 10px;
     justify-content: flex-end;
     white-space: nowrap;
+}
+
+.config-summary-line {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .config-line {
@@ -1012,14 +1160,34 @@ function updateBackupInfo(backup: ClientConfigBackupInfo): void {
     font-size: 13px;
 }
 
-.matched-user-tag {
-    margin-left: 2px;
+.config-flow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary, #8c8c8c);
+    background: var(--bg-color-secondary, #fafafa);
+    padding: 2px 8px 2px 2px;
+    border-radius: 6px;
+    font-size: 13px;
+    border: 1px solid var(--border-color, #f0f0f0);
 }
 
-.backup-detail {
-    color: var(--text-secondary, #8c8c8c);
-    font-size: 12px;
+.merged-mode-tag {
+    margin-right: 2px;
+    border-radius: 4px;
+    border-color: transparent;
 }
+
+.flow-arrow {
+    font-size: 10px;
+    color: #bfbfbf;
+}
+
+.flow-logo {
+    width: 14px;
+    height: 14px;
+}
+
 
 .client-message {
     margin-top: 8px;
@@ -1033,6 +1201,20 @@ function updateBackupInfo(backup: ClientConfigBackupInfo): void {
 
 .config-form {
     padding-top: 8px;
+}
+
+.readonly-config-form :deep(.ant-form-item) {
+    margin-bottom: 14px;
+}
+
+.readonly-field {
+    align-items: center;
+    background: var(--bg-layout, #f5f5f5);
+    border: 1px solid var(--border-color, #d9d9d9);
+    border-radius: 6px;
+    display: flex;
+    min-height: 32px;
+    padding: 4px 11px;
 }
 
 .form-label-with-help {
