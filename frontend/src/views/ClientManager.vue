@@ -941,7 +941,7 @@ function getVendorTypeTagStyle(type?: VendorType) {
 }
 
 function getCurrentConfigName(client: ClientConfigStatus): string {
-    return client.currentConfig?.model || `${client.displayName} 配置`;
+    return `${client.displayName} 当前生效配置`;
 }
 
 async function openDetailDialog(client: ClientConfigStatus, config: CurrentClientConfig | null, name: string): Promise<void> {
