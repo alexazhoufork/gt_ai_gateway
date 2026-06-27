@@ -336,7 +336,16 @@ async function updateBackupConfig(params: UpdateClientConfigBackupParams): Promi
 
     if (backup.enabled) {
         // If the backup being updated is currently enabled, apply changes to local config immediately
-        await adapter.writeConfig(backup.configContent);
+        // BUT we must patch the current local file to preserve any manual additions like mcpServers!
+        const parsedBackup = adapter.parseConfigContent(backup.configContent);
+        if (parsedBackup) {
+            const currentContent = await adapter.readConfig();
+            const patchedContent = adapter.patchConfigContent(currentContent, parsedBackup);
+            await adapter.writeConfig(patchedContent);
+        } else {
+            // Fallback
+            await adapter.writeConfig(backup.configContent);
+        }
     }
 
     const { fs } = await loadNodeApis();
@@ -391,7 +400,15 @@ async function applyConfig(params: ApplyClientConfigParams): Promise<ClientConfi
         throw new Error("Backup not found");
     }
 
-    await adapter.writeConfig(backup.configContent);
+    const parsedBackup = adapter.parseConfigContent(backup.configContent);
+    if (!parsedBackup) {
+        throw new Error("无法解析保存的配置内容");
+    }
+
+    const currentContent = await adapter.readConfig();
+    const patchedContent = adapter.patchConfigContent(currentContent, parsedBackup);
+
+    await adapter.writeConfig(patchedContent);
     await enableBackup(params.client, backup);
     const { fs } = await loadNodeApis();
     const adapterStatus = await configAdapterUtils.buildClientStatus(adapter, fs);
