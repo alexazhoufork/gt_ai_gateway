@@ -34,7 +34,7 @@ class CodexConfigAdapter extends BaseConfigAdapter {
         return `${url}${this.defaultGatewaySuffix}`;
     }
 
-    parseConfigContent(configContent: ClientConfigFileContent): ClientConfigContent | null {
+    parseConfigFileContent(configContent: ClientConfigFileContent): ClientConfigContent | null {
         const content = configContent[this.configPaths[0]] || "";
         if (!content) {
             return null;
@@ -56,7 +56,7 @@ class CodexConfigAdapter extends BaseConfigAdapter {
         };
     }
 
-    patchConfigContent(configContent: ClientConfigFileContent, fields: ClientConfigContent): ClientConfigFileContent {
+    patchConfigFileContent(configContent: ClientConfigFileContent, fields: ClientConfigContent): ClientConfigFileContent {
         let content = configContent[this.configPaths[0]] || "";
         content = tomlUtil.upsertRootTomlValue(content, "model_provider", tomlUtil.buildTomlString("gt_ai_gateway"));
 

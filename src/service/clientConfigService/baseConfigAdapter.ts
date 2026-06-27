@@ -21,8 +21,8 @@ abstract class BaseConfigAdapter implements ConfigAdapter {
     abstract readonly defaultGatewaySuffix: string;
     readonly configPaths: string[];
 
-    abstract parseConfigContent(configContent: ClientConfigFileContent): ClientConfigContent | null;
-    abstract patchConfigContent(content: ClientConfigFileContent, fields: ClientConfigContent): ClientConfigFileContent;
+    abstract parseConfigFileContent(configContent: ClientConfigFileContent): ClientConfigContent | null;
+    abstract patchConfigFileContent(content: ClientConfigFileContent, fields: ClientConfigContent): ClientConfigFileContent;
 
     constructor(
         fs: FileSystemApi,

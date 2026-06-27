@@ -102,7 +102,7 @@ function extractFieldsFromBackup(backupContent: any, adapter: ConfigAdapter): Cl
     if ("gatewayUrl" in backupContent || "connectionMode" in backupContent) {
         return backupContent as ClientConfigContent;
     }
-    return adapter.parseConfigContent(backupContent);
+    return adapter.parseConfigFileContent(backupContent);
 }
 
 async function toBackupInfo(record: SgClientConfig, adapter: ConfigAdapter): Promise<ClientConfigBackupInfo> {
@@ -164,7 +164,7 @@ async function enrichStatus(adapterStatus: AdapterConfigStatus, adapter: ConfigA
     if (activeRecord) {
         const currentContent = await adapter.readConfig();
         const activeConfig = extractFieldsFromBackup(activeRecord.configContent, adapter);
-        const currentConfig = adapter.parseConfigContent(currentContent);
+        const currentConfig = adapter.parseConfigFileContent(currentContent);
 
         if (activeConfig && currentConfig) {
             const serializeRelevant = (c: ClientConfigContent) => JSON.stringify({
@@ -256,7 +256,7 @@ async function createBackup(params: CreateClientConfigBackupParams): Promise<Cli
 
     const adapter = await getAdapter(params.client);
     const configContent = await adapter.readConfig();
-    const fields = adapter.parseConfigContent(configContent) || { gatewayUrl: "", apiKey: "", model: "" };
+    const fields = adapter.parseConfigFileContent(configContent) || { gatewayUrl: "", apiKey: "", model: "" };
     const record = await SgClientConfig.query().create({
         client: params.client,
         name: params.name?.trim() || await formatUniqueBackupName(params.client, "未命名配置"),
@@ -335,7 +335,7 @@ async function updateBackupConfig(params: UpdateClientConfigBackupParams): Promi
         // If the backup being updated is currently enabled, apply changes to local config immediately
         // BUT we must patch the current local file to preserve any manual additions like mcpServers!
         const currentContent = await adapter.readConfig();
-        const patchedContent = adapter.patchConfigContent(currentContent, fields);
+        const patchedContent = adapter.patchConfigFileContent(currentContent, fields);
         await adapter.writeConfig(patchedContent);
     }
 
@@ -397,7 +397,7 @@ async function applyConfig(params: ApplyClientConfigParams): Promise<ClientConfi
     }
 
     const currentContent = await adapter.readConfig();
-    const patchedContent = adapter.patchConfigContent(currentContent, parsedBackup);
+    const patchedContent = adapter.patchConfigFileContent(currentContent, parsedBackup);
 
     await adapter.writeConfig(patchedContent);
     await enableBackup(params.client, backup);

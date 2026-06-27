@@ -60,7 +60,7 @@ async function buildClientStatus(adapter: ConfigAdapter, fs: FileSystemApi): Pro
 
     if (installed && await pathExists(fs, adapter.configPaths[0])) {
         try {
-            currentConfig = adapter.parseConfigContent(await adapter.readConfig());
+            currentConfig = adapter.parseConfigFileContent(await adapter.readConfig());
             configured = Boolean(currentConfig);
         } catch (error) {
             message = `配置文件解析失败: ${String(error)}`;

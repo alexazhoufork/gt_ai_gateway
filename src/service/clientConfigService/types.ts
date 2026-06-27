@@ -109,8 +109,8 @@ interface ConfigAdapter {
     isInstalled(): Promise<boolean>;
     readConfig(): Promise<ClientConfigFileContent>;
     writeConfig(content: ClientConfigFileContent): Promise<void>;
-    parseConfigContent(configContent: ClientConfigFileContent): ClientConfigContent | null;
-    patchConfigContent(content: ClientConfigFileContent, fields: ClientConfigContent): ClientConfigFileContent;
+    parseConfigFileContent(configContent: ClientConfigFileContent): ClientConfigContent | null;
+    patchConfigFileContent(content: ClientConfigFileContent, fields: ClientConfigContent): ClientConfigFileContent;
 }
 
 export type {

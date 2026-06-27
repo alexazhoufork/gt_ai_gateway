@@ -25,7 +25,7 @@ class ClaudeCodeConfigAdapter extends BaseConfigAdapter {
         return `${url}${this.defaultGatewaySuffix}`;
     }
 
-    parseConfigContent(configContent: ClientConfigFileContent): ClientConfigContent | null {
+    parseConfigFileContent(configContent: ClientConfigFileContent): ClientConfigContent | null {
         const content = configContent[this.configPaths[0]] || "";
         if (!content) {
             return null;
@@ -47,7 +47,7 @@ class ClaudeCodeConfigAdapter extends BaseConfigAdapter {
         };
     }
 
-    patchConfigContent(content: ClientConfigFileContent, fields: ClientConfigContent): ClientConfigFileContent {
+    patchConfigFileContent(content: ClientConfigFileContent, fields: ClientConfigContent): ClientConfigFileContent {
         const oldContent = content[this.configPaths[0]] || "";
         const config = configAdapterUtils.parseJsonConfig(oldContent);
         config.env = {
