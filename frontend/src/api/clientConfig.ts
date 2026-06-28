@@ -6,6 +6,7 @@ import type {
     ClientConfigStatusResponse,
     CreateClientConfigBackupRequest,
     CreateClientConfigRequest,
+    CurrentClientConfig,
     DeleteClientConfigBackupRequest,
     RenameClientConfigBackupRequest,
     UpdateClientConfigBackupRequest,
@@ -37,4 +38,8 @@ export async function updateClientConfigBackup(data: UpdateClientConfigBackupReq
 
 export async function deleteClientConfigBackup(data: DeleteClientConfigBackupRequest): Promise<ClientConfigStatus> {
     return request.post('/client-config/backup/delete.json', data);
+}
+
+export async function readLocalConfig(client: string): Promise<CurrentClientConfig> {
+    return request.get(`/client-config/local.json?client=${client}`);
 }

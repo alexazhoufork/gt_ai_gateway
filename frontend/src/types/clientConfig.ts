@@ -36,11 +36,13 @@ export interface CurrentClientConfig {
     version?: string;
     connectionMode: ClientConnectionMode;
     gatewayUrl: string;
-    apiKey: string;
+    apiKey?: string;
     model: string;
-    gatewayUser: GatewayUserInfo | null;
+    gatewayUser?: GatewayUserInfo | null;
     effortLevel?: string;
     matchedVendorId?: number | null;
+    userId?: number;
+    vendorId?: number;
 }
 
 export interface GatewayUserInfo {
@@ -66,21 +68,15 @@ export interface ClientConfigStatusResponse {
     clients: ClientConfigStatus[];
 }
 
-export interface CreateClientConfigRequest {
-    version?: string;
+export interface CreateClientConfigRequest extends CurrentClientConfig {
     client: ClientName;
-    connectionMode?: ClientConnectionMode;
-    gatewayUrl: string;
-    userId?: number;
-    vendorId?: number;
-    model: string;
-    effortLevel?: string;
 }
 
 export interface CreateClientConfigBackupRequest {
     client: ClientName;
     name?: string;
     enabled?: boolean;
+    configContent?: CurrentClientConfig;
 }
 
 export interface RenameClientConfigBackupRequest {

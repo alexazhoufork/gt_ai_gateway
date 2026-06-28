@@ -50,9 +50,9 @@
                                         style="font-size: 13px;"
                                         :disabled="!client.installed"
                                         :loading="backingUpClient === client.client"
-                                        @click="backupCurrentConfig(client.client)"
+                                        @click="importFromLocal(client)"
                                     >
-                                        <CopyOutlined /> 从本地配置新建
+                                        <CopyOutlined /> 从本地配置导入
                                     </a-button>
                                     <a-button
                                         type="primary"
@@ -226,6 +226,7 @@
             :mode="configDialogMode"
             :selected-client="configDialogClient"
             :backup="configDialogBackup"
+            :local-config="configDialogLocalConfig"
             :users="users"
             :models="models"
             :vendors="vendors"
@@ -245,7 +246,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref, watch } from 'vue';
 import { message, Modal } from 'ant-design-vue/es';
 import { ArrowRightOutlined, CheckCircleFilled, CopyOutlined, DeleteOutlined, EditOutlined, InfoCircleOutlined, ReloadOutlined, PlusOutlined } from '@ant-design/icons-vue';
 import {
@@ -253,12 +254,14 @@ import {
     createClientConfigBackup,
     deleteClientConfigBackup,
     getClientConfigStatus,
+    readLocalConfig,
     updateClientConfigBackup,
 } from '@/api/clientConfig';
 import { ClientName, ClientConnectionMode } from '@/types/clientConfig';
 import type {
     ClientConfigBackupInfo,
     ClientConfigStatus,
+    CurrentClientConfig,
 } from '@/types/clientConfig';
 import { listUsers } from '@/api/user';
 import { listModels } from '@/api/model';
@@ -296,12 +299,17 @@ const configDialogMode = ref<'create' | 'edit' | 'detail'>('create');
 const configDialogClient = ref<ClientConfigStatus | null>(null);
 const configDialogBackup = ref<ClientConfigBackupInfo | null>(null);
 const configDialogDefaultUrl = ref('');
+const configDialogLocalConfig = ref<CurrentClientConfig | null>(null);
 
 const renameDialogVisible = ref(false);
 const renameForm = reactive({
     client: ClientName.CLAUDE_CODE as ClientName,
     backupId: 0,
     name: '',
+});
+
+watch(configDialogVisible, (isOpen) => {
+    if (!isOpen) configDialogLocalConfig.value = null;
 });
 
 
@@ -378,7 +386,7 @@ async function handleConfigSave(request: any): Promise<void> {
         updateClientStatus(status);
         message.success('配置已更新');
     } else {
-        if (client.backupCount < 1) {
+        if (!configDialogLocalConfig.value && client.backupCount < 1) {
             const shouldContinue = await confirmInitialBackup(client);
             if (!shouldContinue) return;
         }
@@ -386,10 +394,10 @@ async function handleConfigSave(request: any): Promise<void> {
         try {
             const backup = await createClientConfigBackup({
                 client: request.client,
-                ...request,
+                configContent: request,
             });
             addBackup(backup);
-            message.success('配置已创建');
+            message.success(configDialogLocalConfig.value ? '配置已导入' : '配置已创建');
         } finally {
             savingClient.value = '';
         }
@@ -426,6 +434,25 @@ function openRenameDialog(client: ClientName, backup: ClientConfigBackupInfo): v
 function handleRename(backup: any): void {
     updateBackupInfo(backup);
     renameDialogVisible.value = false;
+}
+
+
+async function importFromLocal(client: ClientConfigStatus): Promise<void> {
+    backingUpClient.value = client.client;
+    try {
+        const localConfig = await readLocalConfig(client.client);
+        await loadDialogOptions();
+        configDialogClient.value = client;
+        configDialogBackup.value = null;
+        configDialogMode.value = 'create';
+        configDialogDefaultUrl.value = getDefaultGatewayUrl(client);
+        configDialogLocalConfig.value = localConfig;
+        configDialogVisible.value = true;
+    } catch {
+        message.error('读取本地配置失败');
+    } finally {
+        backingUpClient.value = '';
+    }
 }
 
 

@@ -31,6 +31,7 @@ interface CreateClientConfigBackupParams {
     client: ClientName;
     name?: string;
     enabled?: boolean;
+    configContent?: ClientConfigContent;
 }
 
 interface ClientConfigStatusResponse {

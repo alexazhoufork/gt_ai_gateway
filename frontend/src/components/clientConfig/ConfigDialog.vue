@@ -127,44 +127,57 @@
                         <a-input :value="protocolLabel" disabled />
                     </a-form-item>
                     <a-form-item label="供应商" required>
-                        <a-select
-                            v-model:value="form.vendorId"
-                            show-search
-                            placeholder="选择上游供应商"
-                            :filter-option="filterSelectOption"
-                            :disabled="isDetail"
-                            @change="onVendorChange"
-                        >
-                            <a-select-option
-                                v-for="vendor in vendors"
-                                :key="vendor.id"
-                                :value="vendor.id"
-                                :label="`${vendor.name} ${getVendorTypeLabel(vendor.type)}`"
+                        <template v-if="isVendorRecognized">
+                            <a-select
+                                v-model:value="form.vendorId"
+                                show-search
+                                placeholder="选择上游供应商"
+                                :filter-option="filterSelectOption"
+                                :disabled="isDetail"
+                                @change="onVendorChange"
                             >
-                                <div class="select-option-row">
-                                    <a-tag
-                                        class="select-tag"
-                                        :color="getVendorTypeColor(vendor.type)"
-                                        :style="getVendorTypeTagStyle(vendor.type)"
-                                    >
-                                        {{ getVendorTypeLabel(vendor.type) }}
-                                    </a-tag>
-                                    <span class="select-option-name">{{ vendor.name }}</span>
-                                </div>
-                            </a-select-option>
-                            <template #labelRender="{ value }">
-                                <div v-if="findVendor(Number(value))" class="select-option-row selected-option">
-                                    <a-tag
-                                        class="select-tag"
-                                        :color="getVendorTypeColor(findVendor(Number(value))?.type)"
-                                        :style="getVendorTypeTagStyle(findVendor(Number(value))?.type)"
-                                    >
-                                        {{ getVendorTypeLabel(findVendor(Number(value))?.type) }}
-                                    </a-tag>
-                                    <span class="select-option-name">{{ findVendor(Number(value))?.name }}</span>
-                                </div>
-                            </template>
-                        </a-select>
+                                <a-select-option
+                                    v-for="vendor in vendors"
+                                    :key="vendor.id"
+                                    :value="vendor.id"
+                                    :label="`${vendor.name} ${getVendorTypeLabel(vendor.type)}`"
+                                >
+                                    <div class="select-option-row">
+                                        <a-tag
+                                            class="select-tag"
+                                            :color="getVendorTypeColor(vendor.type)"
+                                            :style="getVendorTypeTagStyle(vendor.type)"
+                                        >
+                                            {{ getVendorTypeLabel(vendor.type) }}
+                                        </a-tag>
+                                        <span class="select-option-name">{{ vendor.name }}</span>
+                                    </div>
+                                </a-select-option>
+                                <template #labelRender="{ value }">
+                                    <div v-if="findVendor(Number(value))" class="select-option-row selected-option">
+                                        <a-tag
+                                            class="select-tag"
+                                            :color="getVendorTypeColor(findVendor(Number(value))?.type)"
+                                            :style="getVendorTypeTagStyle(findVendor(Number(value))?.type)"
+                                        >
+                                            {{ getVendorTypeLabel(findVendor(Number(value))?.type) }}
+                                        </a-tag>
+                                        <span class="select-option-name">{{ findVendor(Number(value))?.name }}</span>
+                                    </div>
+                                </template>
+                            </a-select>
+                        </template>
+                        <template v-else>
+                            <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 8px;">
+                                该供应商未添加到 GtAIGateway 中，以下为原始配置信息。
+                            </div>
+                            <a-form-item label="服务端地址" style="margin-bottom: 8px;">
+                                <a-input :value="unrecognizedVendorUrl" disabled />
+                            </a-form-item>
+                            <a-form-item label="API Key">
+                                <a-input :value="unrecognizedVendorApiKey" disabled />
+                            </a-form-item>
+                        </template>
                     </a-form-item>
                     <a-form-item label="模型" required>
                         <a-select
@@ -258,6 +271,7 @@ const props = defineProps<{
     mode: 'create' | 'edit' | 'detail';
     selectedClient: ClientConfigStatus | null;
     backup: ClientConfigBackupInfo | null;
+    localConfig: CurrentClientConfig | null;
     users: User[];
     models: Model[];
     vendors: Vendor[];
@@ -273,6 +287,8 @@ const emit = defineEmits<{
 const saving = ref(false);
 const vendorModels = ref<VendorModel[]>([]);
 const gatewayUrlSearch = ref('');
+const unrecognizedVendorUrl = ref('');
+const unrecognizedVendorApiKey = ref('');
 
 const visible = computed({
     get: () => props.open,
@@ -280,6 +296,11 @@ const visible = computed({
 });
 
 const isDetail = computed(() => props.mode === 'detail');
+const isVendorRecognized = computed(() => {
+    if (form.connectionMode !== ClientConnectionMode.VENDOR) return true;
+    if (!form.vendorId) return false;
+    return props.vendors.some(v => v.id === form.vendorId);
+});
 
 const gatewayUrlOptions = computed(() => {
     const options = [];
@@ -325,7 +346,9 @@ const form = reactive({
 
 watch(() => props.open, (isOpen) => {
     if (!isOpen) return;
-    if (props.mode === 'create') {
+    if (props.localConfig) {
+        initFromBackup(props.localConfig);
+    } else if (props.mode === 'create') {
         initCreateForm();
     } else if (props.backup?.config) {
         initFromBackup(props.backup.config);
@@ -344,6 +367,8 @@ function initCreateForm(): void {
     form.upstreamModel = '';
     form.effortLevel = undefined;
     form.apiKey = undefined;
+    unrecognizedVendorUrl.value = '';
+    unrecognizedVendorApiKey.value = '';
 
     const activeUser = props.users.find(u => u.status === 'active');
     if (activeUser) form.userId = activeUser.id;
@@ -378,6 +403,9 @@ function initFromBackup(config: CurrentClientConfig): void {
         form.gatewayUrl = '';
         form.model = '';
         form.userId = null;
+        const recognized = config.matchedVendorId && props.vendors.some(v => v.id === config.matchedVendorId);
+        unrecognizedVendorUrl.value = recognized ? '' : config.gatewayUrl;
+        unrecognizedVendorApiKey.value = recognized ? '' : (config.apiKey || '');
     } else {
         form.gatewayUrl = '';
         form.upstreamUrl = '';
@@ -412,6 +440,8 @@ async function onVendorChange(): Promise<void> {
         form.upstreamModel = '';
         return;
     }
+    unrecognizedVendorUrl.value = '';
+    unrecognizedVendorApiKey.value = '';
 
     form.upstreamUrl = getVendorUrl(vendor, form.protocol, props.vendorPresetUrls);
     vendorModels.value = await listVendorModels(vendor.id);

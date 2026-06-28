@@ -41,10 +41,19 @@ async function updateBackup(c: Context) {
     return c.json(await clientConfigService.updateBackupConfig(body));
 }
 
+async function readLocal(c: Context) {
+    const client = c.req.query('client');
+    if (!client) {
+        return c.json({ error: 'client is required' }, 400);
+    }
+    return c.json(await clientConfigService.readLocalConfig(client as any));
+}
+
 export default {
     backup,
     create,
     deleteBackup,
+    readLocal,
     renameBackup,
     status,
     apply,

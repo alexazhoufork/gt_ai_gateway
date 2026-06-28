@@ -337,8 +337,11 @@ async function createBackup(params: CreateClientConfigBackupParams): Promise<Cli
     }
 
     const adapter = await getAdapter(params.client);
-    const configContent = await adapter.readConfig();
-    const fields = adapter.parseConfigFileContent(configContent) || { version: "v1", connectionMode: ConnectionMode.OFFICIAL, gatewayUrl: "", apiKey: "", model: "" };
+    let fields = params.configContent;
+    if (!fields) {
+        const configContent = await adapter.readConfig();
+        fields = adapter.parseConfigFileContent(configContent) || { version: "v1", connectionMode: ConnectionMode.OFFICIAL, gatewayUrl: "", apiKey: "", model: "" };
+    }
     const record = await SgClientConfig.query().create({
         client: params.client,
         name: params.name?.trim() || await formatUniqueBackupName(params.client, "未命名配置"),
@@ -470,6 +473,20 @@ async function enableBackup(client: ClientName, backup: SgClientConfig): Promise
 }
 
 
+async function readLocalConfig(client: ClientName): Promise<ClientConfigContent> {
+    if (ormService.isWorker) {
+        throw new Error("客户端管理需要读写本机配置文件，请本地安装后使用。");
+    }
+    const adapter = await getAdapter(client);
+    const configContent = await adapter.readConfig();
+    const fields = adapter.parseConfigFileContent(configContent) || { version: "v1", connectionMode: ConnectionMode.OFFICIAL, gatewayUrl: "", apiKey: "", model: "" };
+    if (fields.connectionMode === ConnectionMode.VENDOR && fields.gatewayUrl) {
+        (fields as any).matchedVendorId = await vendorService.findVendorByUrl(fields.gatewayUrl, adapter.protocol);
+    }
+    return fields;
+}
+
+
 async function applyConfig(params: ApplyClientConfigParams): Promise<ClientConfigStatus> {
     if (ormService.isWorker) {
         throw new Error("客户端管理需要读写本机配置文件，请本地安装后使用。");
@@ -507,6 +524,7 @@ export default {
     deleteBackup,
     getStatus,
     applyConfig,
+    readLocalConfig,
     renameBackup,
     updateBackupConfig,
 };
