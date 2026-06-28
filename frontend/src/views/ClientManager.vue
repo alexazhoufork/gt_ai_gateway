@@ -107,10 +107,10 @@
                                                     ghost
                                                     size="small"
                                                     style="margin-left: 4px; font-size: 12px; height: 22px; line-height: 20px;"
-                                                    @click="applyConfig(client.client, backup.id)"
+                                                    @click="openSyncDialog(client.client, backup.id)"
                                                     :loading="savingClient === client.client"
                                                 >
-                                                    写入本地
+                                                    <SyncOutlined /> 同步
                                                 </a-button>
                                                 <a-button
                                                     type="text"
@@ -242,13 +242,21 @@
             :initial-name="renameForm.name"
             @renamed="handleRename"
         />
+
+        <SyncDialog
+            v-model:open="syncDialogVisible"
+            :client="syncDialogClient"
+            :backup-id="syncDialogBackupId"
+            :backup-name="syncDialogBackupName"
+            @synced="loadStatus"
+        />
     </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, reactive, ref, watch } from 'vue';
 import { message, Modal } from 'ant-design-vue/es';
-import { ArrowRightOutlined, CheckCircleFilled, DeleteOutlined, EditOutlined, ImportOutlined, InfoCircleOutlined, ReloadOutlined, PlusOutlined } from '@ant-design/icons-vue';
+import { ArrowRightOutlined, CheckCircleFilled, DeleteOutlined, EditOutlined, ImportOutlined, InfoCircleOutlined, ReloadOutlined, PlusOutlined, SyncOutlined } from '@ant-design/icons-vue';
 import {
     applyClientConfig,
     createClientConfigBackup,
@@ -273,6 +281,7 @@ import type { Vendor } from '@/types/vendor';
 import { getBaseURL } from '@/utils/request';
 import ConfigDialog from '@/components/clientConfig/ConfigDialog.vue';
 import RenameDialog from '@/components/clientConfig/RenameDialog.vue';
+import SyncDialog from '@/components/clientConfig/SyncDialog.vue';
 import {
     getConnectionModeLabel,
     getConnectionModeColor,
@@ -307,6 +316,11 @@ const renameForm = reactive({
     backupId: 0,
     name: '',
 });
+
+const syncDialogVisible = ref(false);
+const syncDialogClient = ref<ClientName>(ClientName.CLAUDE_CODE);
+const syncDialogBackupId = ref(0);
+const syncDialogBackupName = ref('');
 
 watch(configDialogVisible, (isOpen) => {
     if (!isOpen) configDialogLocalConfig.value = null;
@@ -494,6 +508,16 @@ function deleteConfig(client: ClientName, backup: ClientConfigBackupInfo): void 
             }
         },
     });
+}
+
+function openSyncDialog(client: ClientName, backupId: number): void {
+    const target = clients.value.find(item => item.client === client);
+    const backup = target?.backups.find(item => item.id === backupId);
+    if (!backup) return;
+    syncDialogClient.value = client;
+    syncDialogBackupId.value = backupId;
+    syncDialogBackupName.value = backup.name;
+    syncDialogVisible.value = true;
 }
 
 function applyConfig(client: ClientName, backupId?: number): void {

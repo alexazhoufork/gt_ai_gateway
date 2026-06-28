@@ -158,6 +158,8 @@ class CodexConfigAdapter extends BaseConfigAdapter {
 
         if (fields.model.trim()) {
             content = tomlUtil.upsertRootTomlValue(content, "model", tomlUtil.buildTomlString(fields.model.trim()));
+        } else {
+            content = tomlUtil.deleteRootTomlValue(content, "model");
         }
 
         // Codex reserves the "openai" provider ID — delete it and write to auth.json instead
@@ -176,6 +178,8 @@ class CodexConfigAdapter extends BaseConfigAdapter {
         // Legacy format: write to root level
         if (fields.model.trim()) {
             content = tomlUtil.upsertRootTomlValue(content, "model", tomlUtil.buildTomlString(fields.model.trim()));
+        } else {
+            content = tomlUtil.deleteRootTomlValue(content, "model");
         }
 
         // Clean up any duplicate root-level fields first

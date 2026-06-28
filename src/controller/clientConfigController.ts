@@ -49,6 +49,11 @@ async function readLocal(c: Context) {
     return c.json(await clientConfigService.readLocalConfig(client as any));
 }
 
+async function syncFromLocal(c: Context) {
+    const body = await c.req.json();
+    return c.json(await clientConfigService.syncFromLocal(body));
+}
+
 export default {
     backup,
     create,
@@ -57,5 +62,6 @@ export default {
     renameBackup,
     status,
     apply,
+    syncFromLocal,
     updateBackup,
 };

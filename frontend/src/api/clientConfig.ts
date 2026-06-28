@@ -43,3 +43,7 @@ export async function deleteClientConfigBackup(data: DeleteClientConfigBackupReq
 export async function readLocalConfig(client: string): Promise<CurrentClientConfig> {
     return request.get(`/client-config/local.json?client=${client}`);
 }
+
+export async function syncFromLocal(data: { client: string; backupId: number }): Promise<ClientConfigStatus> {
+    return request.post('/client-config/sync-from-local.json', data);
+}

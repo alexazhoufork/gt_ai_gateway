@@ -94,6 +94,7 @@ app.post("/client-config/backup/rename.json", authMiddleware.requireAdmin, clien
 app.post("/client-config/backup/delete.json", authMiddleware.requireAdmin, clientConfigController.deleteBackup);
 app.post("/client-config/backup/update.json", authMiddleware.requireAdmin, clientConfigController.updateBackup);
 app.post("/client-config/apply.json", authMiddleware.requireAdmin, clientConfigController.apply);
+app.post("/client-config/sync-from-local.json", authMiddleware.requireAdmin, clientConfigController.syncFromLocal);
 
 // Vendor (需要管理员权限)
 app.get("/vendor/preset-urls.json", authMiddleware.requireAdmin, vendorController.getPresetUrls);

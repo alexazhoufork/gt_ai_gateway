@@ -442,6 +442,27 @@ async function updateBackupConfig(params: UpdateClientConfigBackupParams): Promi
 }
 
 
+async function syncFromLocal(params: { client: ClientName; backupId: number }): Promise<ClientConfigStatus> {
+    if (ormService.isWorker) {
+        throw new Error("客户端管理需要读写本机配置文件，请本地安装后使用。");
+    }
+    const adapter = await getAdapter(params.client);
+    const backup = await SgClientConfig.query()
+        .where("id", params.backupId)
+        .where("client", params.client)
+        .first();
+    if (!backup) {
+        throw new Error("Backup not found");
+    }
+    const configContent = await adapter.readConfig();
+    const fields = adapter.parseConfigFileContent(configContent) || { version: "v1", connectionMode: ConnectionMode.OFFICIAL, gatewayUrl: "", apiKey: "", model: "" };
+    await backup.update({ configContent: fields });
+    const { fs } = await loadNodeApis();
+    const adapterStatus = await configAdapterUtils.buildClientStatus(adapter, fs);
+    return await enrichStatus(adapterStatus, adapter);
+}
+
+
 async function deleteBackup(params: DeleteClientConfigBackupParams): Promise<ClientConfigStatus> {
     if (ormService.isWorker) {
         throw new Error("客户端管理需要读写本机配置文件，请本地安装后使用。");
@@ -526,6 +547,7 @@ export default {
     applyConfig,
     readLocalConfig,
     renameBackup,
+    syncFromLocal,
     updateBackupConfig,
 };
 
