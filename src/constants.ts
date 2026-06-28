@@ -36,6 +36,7 @@ export enum ClientName {
 export enum ConnectionMode {
     GATEWAY = "gateway",
     VENDOR = "vendor",
+    OFFICIAL = "official",
 }
 
 export enum UserType {

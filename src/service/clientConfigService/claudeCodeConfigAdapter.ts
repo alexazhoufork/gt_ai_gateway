@@ -25,7 +25,7 @@ class ClaudeCodeConfigAdapter extends BaseConfigAdapter {
         return `${url}${this.defaultGatewaySuffix}`;
     }
 
-    parseConfigFileContent(configContent: ClientConfigFileContent): ClientConfigContent | null {
+    parseConfigFileContent(configContent: ClientConfigFileContent, connectionMode?: ConnectionMode): ClientConfigContent | null {
         const content = configContent[this.configPaths[0]] || "";
         if (!content) {
             return null;
@@ -34,13 +34,15 @@ class ClaudeCodeConfigAdapter extends BaseConfigAdapter {
         const config = configAdapterUtils.parseJsonConfig(content);
         const backendUrl = config.env?.ANTHROPIC_BASE_URL || "";
         const token = config.env?.ANTHROPIC_AUTH_TOKEN || config.env?.ANTHROPIC_API_KEY || "";
-        if (!backendUrl || !token) {
+        const mode = (!backendUrl || backendUrl === "https://api.anthropic.com") ? ConnectionMode.OFFICIAL : (this.isGatewayUrl(backendUrl) ? ConnectionMode.GATEWAY : ConnectionMode.VENDOR);
+        
+        if (!token) {
             return null;
         }
 
         return {
             version: "v1",
-            connectionMode: this.isGatewayUrl(config.env?.ANTHROPIC_BASE_URL) ? ConnectionMode.GATEWAY : ConnectionMode.VENDOR, // Accurate deduction by host and port
+            connectionMode: mode,
             gatewayUrl: backendUrl,
             apiKey: token,
             model: config.env?.ANTHROPIC_MODEL || config.env?.CLAUDE_CODE_SUBAGENT_MODEL || config.model || "",
@@ -48,30 +50,66 @@ class ClaudeCodeConfigAdapter extends BaseConfigAdapter {
         };
     }
 
-    patchConfigFileContent(content: ClientConfigFileContent, fields: ClientConfigContent): ClientConfigFileContent {
+    patchConfigFileContent(content: ClientConfigFileContent, fields: ClientConfigContent, connectionMode?: ConnectionMode): ClientConfigFileContent {
         const oldContent = content[this.configPaths[0]] || "";
         const config = configAdapterUtils.parseJsonConfig(oldContent);
-        config.env = {
-            ...(config.env || {}),
-            ANTHROPIC_BASE_URL: this.buildBaseUrl(fields),
-            ANTHROPIC_AUTH_TOKEN: fields.apiKey,
-        };
+        if (fields.apiKey) {
+            config.env = {
+                ...(config.env || {}),
+                ANTHROPIC_AUTH_TOKEN: fields.apiKey,
+            };
+        }
+
+        if (fields.connectionMode === ConnectionMode.OFFICIAL) {
+            if (config.env) {
+                delete config.env.ANTHROPIC_BASE_URL;
+                if (!fields.apiKey) {
+                    delete config.env.ANTHROPIC_AUTH_TOKEN;
+                }
+                if (Object.keys(config.env).length === 0) {
+                    delete config.env;
+                }
+            }
+        } else {
+            config.env = {
+                ...(config.env || {}),
+                ANTHROPIC_BASE_URL: this.buildBaseUrl(fields),
+            };
+        }
         
         // Remove old deprecated configs
         delete config.model;
-        delete config.env.CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY;
+        if (config.env) {
+            delete config.env.CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY;
+        }
 
         if (fields.model.trim()) {
             const model = fields.model.trim();
+            if (!config.env) config.env = {};
             config.env.ANTHROPIC_MODEL = model;
             config.env.ANTHROPIC_DEFAULT_OPUS_MODEL = model;
             config.env.ANTHROPIC_DEFAULT_SONNET_MODEL = model;
             config.env.ANTHROPIC_DEFAULT_HAIKU_MODEL = model;
             config.env.CLAUDE_CODE_SUBAGENT_MODEL = model;
+        } else if (config.env) {
+            delete config.env.ANTHROPIC_MODEL;
+            delete config.env.ANTHROPIC_DEFAULT_OPUS_MODEL;
+            delete config.env.ANTHROPIC_DEFAULT_SONNET_MODEL;
+            delete config.env.ANTHROPIC_DEFAULT_HAIKU_MODEL;
+            delete config.env.CLAUDE_CODE_SUBAGENT_MODEL;
+            if (Object.keys(config.env).length === 0) {
+                delete config.env;
+            }
         }
 
         if (fields.effortLevel?.trim()) {
+            if (!config.env) config.env = {};
             config.env.CLAUDE_CODE_EFFORT_LEVEL = fields.effortLevel.trim();
+        } else if (config.env) {
+            delete config.env.CLAUDE_CODE_EFFORT_LEVEL;
+            if (Object.keys(config.env).length === 0) {
+                delete config.env;
+            }
         }
 
         return {

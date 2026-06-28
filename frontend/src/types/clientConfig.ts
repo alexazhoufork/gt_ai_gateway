@@ -10,6 +10,7 @@ export type ClientName = typeof ClientName[keyof typeof ClientName];
 export const ClientConnectionMode = {
     GATEWAY: 'gateway',
     VENDOR: 'vendor',
+    OFFICIAL: 'official',
 } as const;
 
 export type ClientConnectionMode = typeof ClientConnectionMode[keyof typeof ClientConnectionMode];

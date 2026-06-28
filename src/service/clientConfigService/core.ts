@@ -99,9 +99,20 @@ async function enrichGatewayUser(config: ClientConfigContent | null): Promise<Cu
 
 function extractFieldsFromBackup(backupContent: any, adapter: ConfigAdapter): ClientConfigContent | null {
     if (!backupContent || typeof backupContent !== "object") return null;
+
+    // New format: backup contains gatewayUrl or connectionMode fields
     if ("gatewayUrl" in backupContent || "connectionMode" in backupContent) {
-        return backupContent as ClientConfigContent;
+        const config = backupContent as ClientConfigContent;
+
+        // Verify backup content using adapter-specific validation
+        if (adapter.verifyClientConfigContent && !adapter.verifyClientConfigContent(config)) {
+            return null;
+        }
+
+        return config;
     }
+
+    // Legacy format: backup contains raw config file content
     return adapter.parseConfigFileContent(backupContent);
 }
 
@@ -160,13 +171,30 @@ async function enrichStatus(adapterStatus: AdapterConfigStatus, adapter: ConfigA
     const activeRecord = backupRecords.find(record => isEnabled(record.enabled));
     const activeBackupId = activeRecord ? Number(activeRecord.id) : undefined;
 
+    let activeBackupInvalid = false;
     let activeConfigModified = false;
     if (activeRecord) {
         const currentContent = await adapter.readConfig();
         const activeConfig = extractFieldsFromBackup(activeRecord.configContent, adapter);
         const currentConfig = adapter.parseConfigFileContent(currentContent);
 
-        if (activeConfig && currentConfig) {
+        // Check if config file is corrupted (e.g., duplicate fields, reserved provider ID conflict)
+        const isCorrupted = adapter.isConfigCorrupted && adapter.isConfigCorrupted(currentContent);
+
+        if (!activeConfig) {
+            // Backup is invalid (cannot be parsed)
+            activeBackupInvalid = true;
+        } else if (!currentConfig) {
+            // Backup is valid but local config cannot be parsed
+            // Only mark as modified if the config is actually corrupted
+            if (isCorrupted) {
+                activeConfigModified = true;
+            }
+        } else if (isCorrupted) {
+            // Both are valid but config is corrupted
+            activeConfigModified = true;
+        } else {
+            // Both are valid, compare the fields
             const serializeRelevant = (c: ClientConfigContent) => JSON.stringify({
                 connectionMode: c.connectionMode,
                 gatewayUrl: c.gatewayUrl,
@@ -186,6 +214,7 @@ async function enrichStatus(adapterStatus: AdapterConfigStatus, adapter: ConfigA
         backupCount: backups.length,
         backups,
         activeBackupId,
+        activeBackupInvalid,
         activeConfigModified,
     };
 }
@@ -218,16 +247,38 @@ async function createConfig(params: CreateClientConfigParams): Promise<ClientCon
         throw new Error("客户端管理需要读写本机配置文件，请本地安装后使用。");
     }
 
-    if (!params.gatewayUrl?.trim()) {
-        throw new Error("Gateway URL is required");
-    }
+    // Skip validation for OFFICIAL mode (no gatewayUrl or apiKey required)
+    if (params.connectionMode !== ConnectionMode.OFFICIAL) {
+        if (!params.gatewayUrl?.trim()) {
+            throw new Error("Gateway URL is required");
+        }
 
-    if (!params.apiKey?.trim()) {
-        throw new Error("API key is required");
+        if (!params.apiKey?.trim()) {
+            throw new Error("API key is required");
+        }
     }
 
     const adapter = await getAdapter(params.client);
     const existingContent = await adapter.readConfig();
+
+    // For Codex OFFICIAL mode, read authJson from local config and update access_token
+    let authJson: Record<string, any> | undefined;
+    if (params.client === ClientName.CODEX && (params.connectionMode || ConnectionMode.GATEWAY) === ConnectionMode.OFFICIAL) {
+        const authContent = existingContent[adapter.configPaths[1]];
+        if (authContent) {
+            try {
+                const parsed = JSON.parse(authContent);
+                // Only use authJson if it has tokens with id_token
+                if (parsed?.tokens?.id_token) {
+                    authJson = parsed;
+                    authJson.tokens.access_token = params.apiKey.trim();
+                }
+            } catch (e) {
+                // Ignore parsing errors
+            }
+        }
+    }
+
     const fields: ClientConfigContent = {
         version: "v1",
         connectionMode: params.connectionMode || ConnectionMode.GATEWAY,
@@ -235,6 +286,7 @@ async function createConfig(params: CreateClientConfigParams): Promise<ClientCon
         apiKey: params.apiKey.trim(),
         model: params.model?.trim() || "",
         effortLevel: params.effortLevel?.trim(),
+        authJson,
     };
     
     await SgClientConfig.query().create({
@@ -257,7 +309,7 @@ async function createBackup(params: CreateClientConfigBackupParams): Promise<Cli
 
     const adapter = await getAdapter(params.client);
     const configContent = await adapter.readConfig();
-    const fields = adapter.parseConfigFileContent(configContent) || { gatewayUrl: "", apiKey: "", model: "" };
+    const fields = adapter.parseConfigFileContent(configContent) || { version: "v1", connectionMode: ConnectionMode.OFFICIAL, gatewayUrl: "", apiKey: "", model: "" };
     const record = await SgClientConfig.query().create({
         client: params.client,
         name: params.name?.trim() || await formatUniqueBackupName(params.client, "未命名配置"),
@@ -303,12 +355,15 @@ async function updateBackupConfig(params: UpdateClientConfigBackupParams): Promi
         throw new Error("客户端管理需要读写本机配置文件，请本地安装后使用。");
     }
 
-    if (!params.gatewayUrl?.trim()) {
-        throw new Error("Gateway URL is required");
-    }
+    // Skip validation for OFFICIAL mode (no gatewayUrl or apiKey required)
+    if (params.connectionMode !== ConnectionMode.OFFICIAL) {
+        if (!params.gatewayUrl?.trim()) {
+            throw new Error("Gateway URL is required");
+        }
 
-    if (!params.apiKey?.trim()) {
-        throw new Error("API key is required");
+        if (!params.apiKey?.trim()) {
+            throw new Error("API key is required");
+        }
     }
 
     const adapter = await getAdapter(params.client);
@@ -324,8 +379,8 @@ async function updateBackupConfig(params: UpdateClientConfigBackupParams): Promi
     const fields: ClientConfigContent = {
         version: "v1",
         connectionMode: params.connectionMode || ConnectionMode.GATEWAY,
-        gatewayUrl: params.gatewayUrl.trim(),
-        apiKey: params.apiKey.trim(),
+        gatewayUrl: params.gatewayUrl?.trim() || "",
+        apiKey: params.apiKey?.trim() || "",
         model: params.model?.trim() || "",
         effortLevel: params.effortLevel?.trim(),
     };

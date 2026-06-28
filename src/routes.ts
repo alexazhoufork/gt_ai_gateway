@@ -175,7 +175,7 @@ app.get("*", async (c, next) => {
     }
 
     // API routes should return 404
-    if (pathname.startsWith("/v1/") || pathname.includes(".json")) {
+    if (pathname.startsWith("/v1/") || pathname.startsWith("/llm/") || pathname.includes(".json")) {
         return c.notFound();
     }
 

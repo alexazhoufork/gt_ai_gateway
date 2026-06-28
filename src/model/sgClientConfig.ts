@@ -9,6 +9,7 @@ interface ClientConfigContent {
     apiKey: string;
     model: string;
     effortLevel?: string;
+    authJson?: Record<string, any>;  // For Codex: store full auth.json content
     [key: string]: any;
 }
 class SgClientConfig extends Model {

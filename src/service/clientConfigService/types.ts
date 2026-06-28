@@ -54,6 +54,7 @@ interface ClientConfigStatus extends AdapterConfigStatus {
     backupCount: number;
     backups: ClientConfigBackupInfo[];
     activeBackupId?: number;
+    activeBackupInvalid: boolean;
     activeConfigModified: boolean;
     currentConfig: CurrentClientConfigWithUser | null;
 }
@@ -109,8 +110,10 @@ interface ConfigAdapter {
     isInstalled(): Promise<boolean>;
     readConfig(): Promise<ClientConfigFileContent>;
     writeConfig(content: ClientConfigFileContent): Promise<void>;
-    parseConfigFileContent(configContent: ClientConfigFileContent): ClientConfigContent | null;
-    patchConfigFileContent(content: ClientConfigFileContent, fields: ClientConfigContent): ClientConfigFileContent;
+    parseConfigFileContent(configContent: ClientConfigFileContent, connectionMode?: ConnectionMode): ClientConfigContent | null;
+    patchConfigFileContent(content: ClientConfigFileContent, fields: ClientConfigContent, connectionMode?: ConnectionMode): ClientConfigFileContent;
+    isConfigCorrupted?(configContent: ClientConfigFileContent): boolean;
+    verifyClientConfigContent?(config: ClientConfigContent): boolean;
 }
 
 export type {

@@ -2,7 +2,7 @@
     <div class="client-manager">
         <div class="page-header">
             <h2 class="page-title">客户端管理</h2>
-            <p class="page-desc">为本机客户端写入网关配置。点击客户端内的配置按钮后选择用户和模型。</p>
+            <p class="page-desc">管理和切换本地AI客户端所使用的模型配置</p>
         </div>
 
         <a-spin :spinning="loading">
@@ -133,8 +133,11 @@
                                                                 客户端通过 GtAIGateway 连接上游。<br/>
                                                                 支持高级功能，如抓取请求流量进行分析、自动协议转换、提升缓存命中率等。
                                                             </div>
+                                                            <div v-else-if="backup.config.connectionMode === ClientConnectionMode.OFFICIAL">
+                                                                直连官方：客户端直接连接官方服务
+                                                            </div>
                                                             <div v-else>
-                                                                客户端直接连接上游供应商，不经过 GtAIGateway 代理。
+                                                                直连模式：客户端直接连接上游供应商，不经过 GtAIGateway 代理。
                                                             </div>
                                                         </template>
                                                         <a-tag :color="getConnectionModeColor(backup.config.connectionMode)" class="merged-mode-tag" style="cursor: help;">
@@ -148,6 +151,11 @@
                                                         <img src="/favicon.svg" class="flow-logo" alt="Gateway" />
                                                         <ArrowRightOutlined class="flow-arrow" />
                                                         <span>☁️</span>
+                                                    </template>
+                                                    <template v-else-if="backup.config.connectionMode === ClientConnectionMode.OFFICIAL">
+                                                        <span>🤖</span>
+                                                        <ArrowRightOutlined class="flow-arrow" />
+                                                        <span>🏢</span>
                                                     </template>
                                                     <template v-else>
                                                         <span>🤖</span>
@@ -217,7 +225,7 @@
             v-model:open="configDialogVisible"
             :title="configDialogTitle"
             :confirm-loading="savingClient === configForm.client"
-            ok-text="配置"
+            ok-text="保存"
             cancel-text="取消"
             width="560px"
             @ok="submitConfig"
@@ -381,6 +389,24 @@
                                 </a-select>
                             </a-form-item>
                         </a-tab-pane>
+
+                        <a-tab-pane :key="ClientConnectionMode.OFFICIAL">
+                            <template #tab>
+                                <span>
+                                    直连官方
+                                    <a-tooltip title="直连官方：客户端直接连接官方服务">
+                                        <InfoCircleOutlined class="label-help-icon" style="margin-left: 4px;" />
+                                    </a-tooltip>
+                                </span>
+                            </template>
+                            <a-alert
+                                message="只读配置"
+                                description="创建后请通过客户端登录。登录完成后，可使用「从本地配置新建」功能导入已登录的配置。"
+                                type="info"
+                                show-icon
+                                style="margin-bottom: 24px;"
+                            />
+                        </a-tab-pane>
                     </a-tabs>
                     <a-form-item
                         v-if="configForm.client === ClientName.CLAUDE_CODE"
@@ -521,6 +547,24 @@
                             </a-select>
                         </a-form-item>
                     </a-tab-pane>
+
+                    <a-tab-pane :key="ClientConnectionMode.OFFICIAL" :disabled="detailConfig.connectionMode !== ClientConnectionMode.OFFICIAL">
+                        <template #tab>
+                            <span>
+                                直连官方
+                                <a-tooltip title="直连官方：客户端直接连接官方服务">
+                                    <InfoCircleOutlined class="label-help-icon" style="margin-left: 4px;" />
+                                </a-tooltip>
+                            </span>
+                        </template>
+                        <a-alert
+                            message="只读配置"
+                            description="直连官方的配置不可在网关侧进行编辑，如需更新配置请在客户端本地重新登录，然后使用「从本地配置新建」功能进行更新。"
+                            type="warning"
+                            show-icon
+                            style="margin-bottom: 24px;"
+                        />
+                    </a-tab-pane>
                 </a-tabs>
             </a-form>
         </a-modal>
@@ -607,6 +651,7 @@ const configForm = reactive<{
     model: string;
     upstreamModel: string;
     effortLevel?: string;
+    apiKey?: string;
 }>({
     client: '',
     connectionMode: ClientConnectionMode.GATEWAY,
@@ -618,6 +663,7 @@ const configForm = reactive<{
     model: '',
     upstreamModel: '',
     effortLevel: undefined,
+    apiKey: undefined,
 });
 
 const editingBackupId = ref<number | null>(null);
@@ -682,6 +728,7 @@ async function openConfigDialog(client: ClientConfigStatus, backup?: ClientConfi
         configForm.connectionMode = backup.config.connectionMode;
         configForm.protocol = client.protocol;
         configForm.effortLevel = backup.config.effortLevel;
+        configForm.apiKey = backup.config.apiKey;
 
         if (backup.config.connectionMode === ClientConnectionMode.GATEWAY) {
             configForm.gatewayUrl = backup.config.gatewayUrl;
@@ -723,6 +770,7 @@ async function openConfigDialog(client: ClientConfigStatus, backup?: ClientConfi
         configForm.model = '';
         configForm.upstreamModel = '';
         configForm.effortLevel = undefined;
+        configForm.apiKey = undefined;
 
         const activeUser = users.value.find(user => user.status === 'active');
         if (activeUser) {
@@ -835,6 +883,16 @@ function confirmInitialBackup(client: ClientConfigStatus): Promise<boolean> {
 
 function buildApplyRequest() {
     if (!configForm.client) return null;
+
+    if (configForm.connectionMode === ClientConnectionMode.OFFICIAL) {
+        return {
+            client: configForm.client,
+            connectionMode: ClientConnectionMode.OFFICIAL,
+            gatewayUrl: '',
+            apiKey: '',
+            model: '',
+        };
+    }
 
     if (configForm.connectionMode === ClientConnectionMode.GATEWAY) {
         const user = users.value.find(item => item.id === configForm.userId);
@@ -964,12 +1022,14 @@ function getUserTypeColor(type?: UserType): string {
 function getConnectionModeLabel(mode?: ClientConnectionMode): string {
     if (mode === ClientConnectionMode.GATEWAY) return '代理模式';
     if (mode === ClientConnectionMode.VENDOR) return '直连模式';
+    if (mode === ClientConnectionMode.OFFICIAL) return '直连官方';
     return '未配置';
 }
 
 function getConnectionModeColor(mode?: ClientConnectionMode): string {
     if (mode === ClientConnectionMode.GATEWAY) return 'blue';
     if (mode === ClientConnectionMode.VENDOR) return 'green';
+    if (mode === ClientConnectionMode.OFFICIAL) return 'purple';
     return 'default';
 }
 
