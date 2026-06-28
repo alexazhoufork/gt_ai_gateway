@@ -428,6 +428,9 @@ async function onConnectionModeChange(mode: string): Promise<void> {
     if (isDetail.value) return;
     form.connectionMode = mode as ClientConnectionMode;
     if (form.connectionMode === ClientConnectionMode.VENDOR) {
+        if (!form.vendorId && props.vendors.length > 0) {
+            form.vendorId = props.vendors[0]!.id;
+        }
         await onVendorChange();
     }
 }
