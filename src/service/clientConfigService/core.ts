@@ -135,7 +135,7 @@ async function toBackupInfo(record: SgClientConfig, adapter: ConfigAdapter): Pro
         createdAt: String(record.created_at || ""),
         enabled: isEnabled(record.enabled),
         config: await enrichGatewayUser(parsedConfig),
-        matchedVendorId: (parsedConfig as any).matchedVendorId ?? null,
+        matchedVendorId: (parsedConfig as any)?.matchedVendorId ?? null,
     };
 }
 
@@ -341,6 +341,9 @@ async function createBackup(params: CreateClientConfigBackupParams): Promise<Cli
     if (!fields) {
         const configContent = await adapter.readConfig();
         fields = adapter.parseConfigFileContent(configContent) || { version: "v1", connectionMode: ConnectionMode.OFFICIAL, gatewayUrl: "", apiKey: "", model: "" };
+    } else if (fields.connectionMode && fields.connectionMode !== ConnectionMode.OFFICIAL) {
+        const apiKey = await resolveApiKey(fields.connectionMode, fields.vendorId, fields.userId);
+        if (apiKey) fields.apiKey = apiKey;
     }
     const record = await SgClientConfig.query().create({
         client: params.client,

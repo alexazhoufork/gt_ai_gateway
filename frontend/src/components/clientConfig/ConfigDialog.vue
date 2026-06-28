@@ -211,7 +211,7 @@
                     <a-alert
                         v-if="isDetail"
                         message="只读配置"
-                        description="直连官方的配置不可在网关侧进行编辑，如需更新配置请在客户端本地重新登录，然后使用「从本地配置新建」功能进行更新。"
+                        description="直连官方的配置不可在网关侧进行编辑，如需更新配置请在客户端本地重新登录，然后使用「从本地配置导入」功能进行更新。"
                         type="warning"
                         show-icon
                         style="margin-bottom: 24px;"
@@ -219,7 +219,7 @@
                     <a-alert
                         v-else
                         message="只读配置"
-                        description="创建后请通过客户端登录。登录完成后，可使用「从本地配置新建」功能导入已登录的配置。"
+                        description="创建后请通过客户端登录。"
                         type="info"
                         show-icon
                         style="margin-bottom: 24px;"

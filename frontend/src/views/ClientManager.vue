@@ -388,11 +388,12 @@ function getDefaultGatewayUrl(client?: ClientConfigStatus): string {
     return url;
 }
 
-async function openConfigDialog(client: ClientConfigStatus, backup?: ClientConfigBackupInfo, mode: 'create' | 'edit' | 'detail' = 'create'): Promise<void> {
+async function openConfigDialog(client: ClientConfigStatus, backup?: ClientConfigBackupInfo, mode?: 'create' | 'edit' | 'detail'): Promise<void> {
+    const resolvedMode = mode || (backup ? 'edit' : 'create');
     await loadDialogOptions();
     configDialogClient.value = client;
     configDialogBackup.value = backup || null;
-    configDialogMode.value = mode;
+    configDialogMode.value = resolvedMode;
     configDialogDefaultUrl.value = getDefaultGatewayUrl(client);
     configDialogVisible.value = true;
 }
