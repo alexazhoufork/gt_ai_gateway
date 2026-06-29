@@ -23,6 +23,7 @@ pub fn get_command(exe_dir: &Path) -> (Command, String) {
         let resource_dir = exe_dir.join("resource");
         let mut c = Command::new(&sidecar_path);
         c.arg("--api-only");
+        c.arg("--desktop-mode");
         (c, resource_dir.join("migrate").to_string_lossy().into_owned())
     }
 }

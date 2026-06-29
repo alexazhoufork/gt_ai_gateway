@@ -10,7 +10,8 @@ import app, { Env } from "./routes";
 import initLogger, { Logger } from "./util/logger";
 
 // --api-only: 跳过前端静态文件服务，仅提供 API（桌面 sidecar 模式使用）
-export const apiOnly = process.argv.includes("--api-only"); console.log("API_ONLY:", apiOnly, process.argv);
+export const apiOnly = process.argv.includes("--api-only");
+export const desktopMode = process.argv.includes("--desktop-mode");
 
 // 加载环境变量
 // Tauri 等环境传入的变量优先级最高，.dev.vars 仅作为兜底（不会覆盖已有变量）
@@ -20,7 +21,7 @@ const DB_PATH = process.env.DB_PATH || join(process.cwd(), "local.db");
 
 // 在桌面版下，Tauri 进程会将自己的 stdin 管道连到这里。
 // 一旦 Tauri 父进程异常退出，管道断开，我们通过监听 stdin 可以及时自动清理，避免产生孤儿进程。
-if (process.env.DESKTOP_MODE === "1") {
+if (desktopMode) {
     process.stdin.resume();
     process.stdin.on("end", () => {
         console.log("Stdin ended, parent process probably died. Exiting...");
