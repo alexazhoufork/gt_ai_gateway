@@ -38,6 +38,17 @@ function getJsonEventType(data: string): string | null {
 }
 
 
+function isClientStreamError(format: ApiFormat, event: ProtocolStreamEvent): boolean {
+    if (event.event === "error") return true;
+    try {
+        const parsed = JSON.parse(event.data);
+        if (parsed?.type === "error" || parsed?.error) {
+            return true;
+        }
+    } catch {}
+    return false;
+}
+
 function isClientStreamCompleted(format: ApiFormat, event: ProtocolStreamEvent): boolean {
     if (format === ApiFormat.OPENAI) {
         return event.data === "[DONE]";
@@ -60,4 +71,5 @@ export default {
     parseEvent,
     getJsonEventType,
     isClientStreamCompleted,
+    isClientStreamError,
 };

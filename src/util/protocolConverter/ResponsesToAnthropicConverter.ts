@@ -44,6 +44,7 @@ export class ResponsesToAnthropicConverter extends BaseConverter {
     private reasoningIndex = 0;
     private inputTokens = 0;
     private outputTokens = 0;
+    private cacheReadTokens = 0;
     private currentToolCallIndex = -1;
 
     private nextSeq(): number {
@@ -291,6 +292,14 @@ export class ResponsesToAnthropicConverter extends BaseConverter {
         const out: ProtocolStreamEvent[] = [];
 
         switch (eventType) {
+            case "error": {
+                out.push({
+                    event: "error",
+                    data: JSON.stringify(data),
+                });
+                break;
+            }
+
             case "message_start": {
                 const msg = (data as any).message;
                 if (msg?.model) this.updateModel(msg.model);
@@ -298,6 +307,7 @@ export class ResponsesToAnthropicConverter extends BaseConverter {
                     this.responseId = msg.id.startsWith("resp_") ? msg.id : `resp_${msg.id.replace("msg_", "")}`;
                 }
                 this.inputTokens = msg?.usage?.input_tokens ?? 0;
+                this.cacheReadTokens = msg?.usage?.cache_read_input_tokens ?? 0;
                 this.seq = 0;
                 this.textBuf = "";
                 this.messageOpen = false;
@@ -579,6 +589,9 @@ export class ResponsesToAnthropicConverter extends BaseConverter {
                 if (usage) {
                     this.outputTokens = usage.output_tokens ?? this.outputTokens;
                     this.inputTokens = usage.input_tokens ?? this.inputTokens;
+                    if (usage.cache_read_input_tokens !== undefined) {
+                        this.cacheReadTokens = usage.cache_read_input_tokens;
+                    }
                 }
                 break;
             }
@@ -661,8 +674,11 @@ export class ResponsesToAnthropicConverter extends BaseConverter {
                             output: outputArr,
                             usage: {
                                 input_tokens: this.inputTokens,
+                                input_tokens_details: this.cacheReadTokens ? {
+                                    cached_tokens: this.cacheReadTokens,
+                                } : undefined,
                                 output_tokens: this.outputTokens,
-                                total_tokens: this.inputTokens + this.outputTokens,
+                                total_tokens: this.inputTokens + this.cacheReadTokens + this.outputTokens,
                             },
                         },
                     }),

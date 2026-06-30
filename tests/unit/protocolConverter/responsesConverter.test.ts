@@ -801,6 +801,62 @@ describe("ResponsesToAnthropicConverter - convertStreamEvent (Anthropic SSE → 
 
         expect(events).toEqual([]);
     });
+
+    it("should handle error stream event correctly and not swallow it", () => {
+        const errorData = {
+            type: "error",
+            error: {
+                type: "rate_limit_error",
+                message: "rate limited"
+            }
+        };
+        const events = converter.convertStreamEvent(JSON.stringify(errorData));
+        expect(events).toHaveLength(1);
+        expect(events[0].event).toBe("error");
+        expect(JSON.parse(events[0].data)).toEqual(errorData);
+    });
+
+    it("should extract cache_read_input_tokens and correctly set input_tokens_details and total_tokens", () => {
+        converter.convertStreamEvent(
+            JSON.stringify({
+                type: "message_start",
+                message: {
+                    id: "msg_123",
+                    type: "message",
+                    role: "assistant",
+                    content: [],
+                    model: "claude-3-sonnet-20240229",
+                    usage: { input_tokens: 10, cache_read_input_tokens: 5, output_tokens: 0 },
+                },
+            }),
+        );
+        converter.convertStreamEvent(
+            JSON.stringify({
+                type: "message_delta",
+                delta: { type: "text_delta", text: "" },
+                usage: { output_tokens: 20 },
+            }),
+        );
+        const endEvents = converter.convertStreamEvent(
+            JSON.stringify({
+                type: "message_stop",
+            }),
+        );
+
+        const completedEvent = endEvents.find(e => {
+            if (!e.data) return false;
+            try {
+                return JSON.parse(e.data).type === "response.completed";
+            } catch { return false; }
+        });
+        expect(completedEvent).toBeDefined();
+        const completedData = JSON.parse(completedEvent!.data);
+        const usage = completedData.response.usage;
+        expect(usage.input_tokens).toBe(10);
+        expect(usage.input_tokens_details.cached_tokens).toBe(5);
+        expect(usage.output_tokens).toBe(20);
+        expect(usage.total_tokens).toBe(35);
+    });
 });
 
 // ============================================================

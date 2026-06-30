@@ -310,6 +310,8 @@ async function handleStreamResponse(
 
                         if (isCompleted) {
                             streamCompleted = true;
+                        } else if (sseEvent.isClientStreamError(format, clientEvent)) {
+                            failedCode = FailedCode.UPSTREAM_ERROR;
                         }
 
                         try {

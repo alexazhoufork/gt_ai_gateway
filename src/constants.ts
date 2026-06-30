@@ -9,6 +9,7 @@ export enum FailedCode {
     CLIENT_DISCONNECTED = "client_disconnected",
     UPSTREAM_DISCONNECTED = "upstream_disconnected",
     STREAM_INCOMPLETE = "stream_incomplete",
+    UPSTREAM_ERROR = "upstream_error",
 }
 
 export enum VendorType {
