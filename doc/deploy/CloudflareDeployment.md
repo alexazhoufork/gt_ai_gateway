@@ -10,7 +10,7 @@
 
 1. **点击一键部署**：
    在项目的 README 页面，点击下面这个按钮：
-   [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/alexazhou/serverless_ai_gateway)
+   [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/alexazhou/gt_ai_gateway)
 
 2. **授权并选择资源**：
    - 网页会引导您授权 GitHub 账号，自动将代码 Fork 到您的名下。
