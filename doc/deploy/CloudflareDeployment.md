@@ -45,7 +45,21 @@
 3. 如果看到 "Workflows aren’t being run on this forked repository"，请点击绿色的 `I understand my workflows, go ahead and enable them` 按钮。
 4. 点击右侧的 `Run workflow` 按钮并确认执行。
 5. 脚本会自动完成 D1 数据库绑定和代码发布（约耗时 1~2 分钟）。
-6. **获取超级管理员密码**：点开执行成功的 Action 详情，展开 `Deploy` 步骤，在日志末尾您会看到自动生成的 **ROOT_TOKEN 密码** 以及应用的 **访问链接**。
+6. **获取超级管理员密码**：点开执行成功的 Action 详情，展开 `Deploy` 步骤，在日志最末尾您会看到自动生成的 **ROOT_TOKEN 密码** 以及应用的 **访问链接**。
+
+### 如何修改或自定义 ROOT_TOKEN？
+如果您想把自动生成的随机密码改成自己好记的密码，或者想更新密码，可以通过以下两种方式配置：
+
+**方式一：通过 GitHub Secrets (推荐)**
+1. 进入 GitHub 仓库 `Settings` -> 左侧 `Secrets and variables` -> `Actions`。
+2. 添加或更新名为 `ROOT_TOKEN` 的 Repository Secret，填入您的自定义密码。
+3. 回到 `Actions` 页面，手动触发一次 `Deploy to Cloudflare` 工作流，部署完成后新密码即刻生效。
+
+**方式二：通过 Cloudflare 控制台**
+1. 登录 Cloudflare 面板，进入左侧菜单的 `Workers & Pages`。
+2. 点击您的网关服务实例（默认名为 `gt-ai-gateway`）。
+3. 点击 `Settings` (设置) 选项卡 -> 左侧选择 `Variables and Secrets`。
+4. 找到 `ROOT_TOKEN` 变量，点击 `Edit` 修改为新密码，保存后 Cloudflare 会在后台自动应用生效。
 
 ### 后续无损更新（一键热升级）
 

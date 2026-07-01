@@ -253,8 +253,6 @@ function setupDatabase() {
     runMigrations(bindingName);
 }
 
-let generatedRootToken = null;
-
 function setupRootToken() {
     if (!options.autoRootToken) {
         console.log("Skipping ROOT_TOKEN setup. Pass --auto-create-root-token to create it automatically.");
@@ -273,16 +271,14 @@ function setupRootToken() {
         }
 
         const tokenToSet = providedToken || crypto.randomUUID();
-        console.log(providedToken ? "Setting custom ROOT_TOKEN from environment..." : "Generating new random ROOT_TOKEN...");
+        console.log(providedToken ? "Setting custom ROOT_TOKEN from environment..." : "Generating new random ROOT_TOKEN (you won't be able to see it)...");
         
         run("npx", ["wrangler", "secret", "put", "ROOT_TOKEN"], {
             input: `${tokenToSet}\n`,
             stdio: ["pipe", "inherit", "inherit"],
         });
 
-        if (!providedToken) {
-            generatedRootToken = tokenToSet;
-        } else {
+        if (providedToken) {
             console.log("✅ Custom ROOT_TOKEN has been securely set.");
         }
     } catch (err) {
@@ -326,14 +322,13 @@ try {
     run("npm", ["run", "frontend:build"]);
     run("npx", ["wrangler", "deploy", "--minify", ...wranglerArgs]);
 
-    if (generatedRootToken) {
-        console.log("\n==========================================");
-        console.log("    🔑 NEW ROOT_TOKEN GENERATED 🔑");
-        console.log("==========================================");
-        console.log(`🚀 Your new ROOT_TOKEN is: ${generatedRootToken}`);
-        console.log("⚠️  Please save this securely. You will need it to log in.");
-        console.log("==========================================\n");
-    }
+    console.log("\n==========================================");
+    console.log("    ✅ DEPLOYMENT SUCCESSFUL ✅");
+    console.log("==========================================");
+    console.log("ℹ️  Your ROOT_TOKEN is the value you configured in GitHub Secrets.");
+    console.log("⚠️  If you modify the secret, please re-run this pipeline to apply the new value.");
+    console.log("==========================================\n");
+
 } catch (error) {
     console.error("Cloudflare deploy failed:", error.message);
     process.exit(1);
