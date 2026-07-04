@@ -77,7 +77,7 @@ RECORD_LOG_ENABLED=false
 | `RECORD_LOG_ENABLED` | `false` | 是否在 `recordService` 中输出请求记录创建/更新日志，适合本地排查 |
 | `LOG_DIR` | `<项目根目录>/log` | 应用日志目录，支持绝对或相对路径。Docker 部署时默认为 `/app/data/log` |
 
-> 流式日志（`log/stream/<record.id>.log`）的开关已迁移到 DB 配置 `stream_log_enabled`，可在前端「高级设置」页切换，或通过 `PUT /config.json` 修改，仅在本地 Node 模式下生效。
+> 流式日志（`log/stream/<record.id>.log`）的开关由 DB 配置 `stream_log_enabled` 控制，可在前端「高级设置」页切换，或通过 `PUT /config.json` 修改，仅在本地 Node 模式下生效。
 
 ---
 

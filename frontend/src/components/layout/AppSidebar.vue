@@ -90,6 +90,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { DashboardOutlined, UserOutlined, ApiOutlined, SettingOutlined, FileTextOutlined, ExperimentOutlined, MenuFoldOutlined, MenuUnfoldOutlined, LinkOutlined, DollarOutlined, ControlOutlined, CodeOutlined, AppstoreAddOutlined } from '@ant-design/icons-vue';
 import { useAppStore } from '@/stores/app';
 import { checkUpdate } from '@/api/system';
+import { getConfig } from '@/api/config';
 
 const router = useRouter();
 const route = useRoute();
@@ -121,14 +122,20 @@ onMounted(() => {
         appStore.fetchVersion();
     }
     
-    // Check for updates
-    checkUpdate().then(status => {
-        hasUpdate.value = status.has_update;
-        if (status.release_url) {
-            updateUrl.value = status.release_url;
+    // Check for updates if auto-update is enabled
+    getConfig().then(config => {
+        if (config.auto_update_enabled !== 'false') {
+            checkUpdate().then(status => {
+                hasUpdate.value = status.has_update;
+                if (status.release_url) {
+                    updateUrl.value = status.release_url;
+                }
+            }).catch(e => {
+                console.error('Failed to check for updates:', e);
+            });
         }
     }).catch(e => {
-        console.error('Failed to check for updates:', e);
+        console.error('Failed to load config for update check:', e);
     });
 });
 

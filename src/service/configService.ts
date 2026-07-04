@@ -6,6 +6,7 @@ export enum ConfigKey {
     CLAUDE_CODE_TRACKING_REWRITE_ENABLED = "claudecode_tracking_rewrite_enabled",
     HOST_KEY = "host_key",
     STREAM_LOG_ENABLED = "stream_log_enabled",
+    AUTO_UPDATE_ENABLED = "auto_update_enabled",
 }
 
 // 各配置项的默认值集中在此维护，调用方无需再传默认值。
@@ -16,6 +17,7 @@ const CONFIG_DEFAULTS: Record<string, string> = {
     [ConfigKey.CLAUDE_CODE_TRACKING_REWRITE_ENABLED]: "true",
     [ConfigKey.HOST_KEY]: "",
     [ConfigKey.STREAM_LOG_ENABLED]: "false",
+    [ConfigKey.AUTO_UPDATE_ENABLED]: "true",
 };
 
 function getDefault(name: string): string {

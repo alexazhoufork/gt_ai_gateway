@@ -83,7 +83,7 @@
                                 </span>
                             </div>
                         </div>
-                        <div class="setting-action">
+                        <div class="setting-action" style="display: flex; align-items: center; gap: 16px;">
                             <a-button 
                                 v-if="hasUpdate" 
                                 type="primary" 
@@ -94,6 +94,10 @@
                             <a-button v-else :loading="checkingUpdate" @click="doCheckUpdate">
                                 检查更新
                             </a-button>
+                            <a-switch
+                                v-model:checked="form.auto_update_enabled"
+                                :disabled="saving"
+                            />
                         </div>
                     </div>
                 </div>
@@ -137,6 +141,7 @@ const originalConfig = reactive({
     responses_prompt_cache_key_enabled: false,
     claude_code_tracking_rewrite_enabled: true,
     stream_log_enabled: false,
+    auto_update_enabled: true,
 });
 
 const form = reactive({
@@ -144,13 +149,15 @@ const form = reactive({
     responses_prompt_cache_key_enabled: false,
     claude_code_tracking_rewrite_enabled: true,
     stream_log_enabled: false,
+    auto_update_enabled: true,
 });
 
 const isDirty = computed(() => {
     return form.cch_rewrite_enabled !== originalConfig.cch_rewrite_enabled ||
            form.responses_prompt_cache_key_enabled !== originalConfig.responses_prompt_cache_key_enabled ||
            form.claude_code_tracking_rewrite_enabled !== originalConfig.claude_code_tracking_rewrite_enabled ||
-           form.stream_log_enabled !== originalConfig.stream_log_enabled;
+           form.stream_log_enabled !== originalConfig.stream_log_enabled ||
+           form.auto_update_enabled !== originalConfig.auto_update_enabled;
 });
 
 onMounted(() => {
@@ -172,6 +179,9 @@ async function loadConfig(): Promise<void> {
 
         form.stream_log_enabled = config.stream_log_enabled === "true";
         originalConfig.stream_log_enabled = config.stream_log_enabled === "true";
+
+        form.auto_update_enabled = config.auto_update_enabled !== "false";
+        originalConfig.auto_update_enabled = config.auto_update_enabled !== "false";
         // 始终拉取一次 status，确保 mode（用于判断是否 worker 模式）是最新的
         await appStore.fetchVersion();
     } finally {
@@ -184,6 +194,7 @@ function cancelChanges() {
     form.responses_prompt_cache_key_enabled = originalConfig.responses_prompt_cache_key_enabled;
     form.claude_code_tracking_rewrite_enabled = originalConfig.claude_code_tracking_rewrite_enabled;
     form.stream_log_enabled = originalConfig.stream_log_enabled;
+    form.auto_update_enabled = originalConfig.auto_update_enabled;
 }
 
 async function doCheckUpdate() {
@@ -226,12 +237,14 @@ async function saveConfig() {
             responses_prompt_cache_key_enabled: form.responses_prompt_cache_key_enabled ? "true" : "false",
             claude_code_tracking_rewrite_enabled: form.claude_code_tracking_rewrite_enabled ? "true" : "false",
             stream_log_enabled: form.stream_log_enabled ? "true" : "false",
+            auto_update_enabled: form.auto_update_enabled ? "true" : "false",
         });
         message.success('配置已保存');
         originalConfig.cch_rewrite_enabled = form.cch_rewrite_enabled;
         originalConfig.responses_prompt_cache_key_enabled = form.responses_prompt_cache_key_enabled;
         originalConfig.claude_code_tracking_rewrite_enabled = form.claude_code_tracking_rewrite_enabled;
         originalConfig.stream_log_enabled = form.stream_log_enabled;
+        originalConfig.auto_update_enabled = form.auto_update_enabled;
     } catch {
         // error handling is typically done by the request interceptor
     } finally {
