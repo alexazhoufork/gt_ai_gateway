@@ -225,6 +225,66 @@ describe("ResponsesToOpenAIConverter", () => {
             });
         });
 
+        it("should merge assistant content with subsequent tool_calls", () => {
+            // 模拟真实场景：assistant 先回复文本，然后调用工具
+            const req: ResponsesRequest = {
+                model: "gpt-4",
+                input: [
+                    { type: "message", role: "user", content: [{ type: "input_text", text: "Run command" }] },
+                    { type: "message", role: "assistant", content: [{ type: "output_text", text: "I'll run the command." }] },
+                    { type: "function_call", call_id: "call_00", name: "exec_command", arguments: '{"cmd":"ls"}' },
+                    { type: "function_call_output", call_id: "call_00", output: "file1.txt" },
+                ],
+            };
+            const result = converter.convertRequest(req);
+            // 应该是 3 个消息：user, assistant(合并content+tool_calls), tool
+            expect(result.messages).toHaveLength(3);
+            expect(result.messages[0]).toEqual({
+                role: "user",
+                content: "Run command",
+            });
+            // assistant 消息应该包含 content 和 tool_calls
+            expect(result.messages[1].role).toBe("assistant");
+            expect(result.messages[1].content).toBe("I'll run the command.");
+            expect(result.messages[1].tool_calls).toHaveLength(1);
+            expect(result.messages[1].tool_calls?.[0].id).toBe("call_00");
+            expect(result.messages[2]).toEqual({
+                role: "tool",
+                tool_call_id: "call_00",
+                content: "file1.txt",
+            });
+        });
+
+        it("should merge function_call with subsequent message assistant", () => {
+            // 模拟真实场景：function_call 后面紧跟 message assistant
+            const req: ResponsesRequest = {
+                model: "gpt-4",
+                input: [
+                    { type: "message", role: "user", content: [{ type: "input_text", text: "Run command" }] },
+                    { type: "function_call", call_id: "call_00", name: "exec_command", arguments: '{"cmd":"ls"}' },
+                    { type: "message", role: "assistant", content: [{ type: "output_text", text: "I ran the command." }] },
+                    { type: "function_call_output", call_id: "call_00", output: "file1.txt" },
+                ],
+            };
+            const result = converter.convertRequest(req);
+            // 应该是 3 个消息：user, assistant(合并tool_calls+content), tool
+            expect(result.messages).toHaveLength(3);
+            expect(result.messages[0]).toEqual({
+                role: "user",
+                content: "Run command",
+            });
+            // assistant 消息应该包含 tool_calls 和 content
+            expect(result.messages[1].role).toBe("assistant");
+            expect(result.messages[1].tool_calls).toHaveLength(1);
+            expect(result.messages[1].tool_calls?.[0].id).toBe("call_00");
+            expect(result.messages[1].content).toBe("I ran the command.");
+            expect(result.messages[2]).toEqual({
+                role: "tool",
+                tool_call_id: "call_00",
+                content: "file1.txt",
+            });
+        });
+
         it("should skip reasoning items", () => {
             const req: ResponsesRequest = {
                 model: "gpt-4",

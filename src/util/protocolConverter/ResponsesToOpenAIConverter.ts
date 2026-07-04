@@ -65,6 +65,23 @@ export class ResponsesToOpenAIConverter extends BaseConverter {
             // 先收集连续的 function_call，合并到一个 assistant 消息
             let pendingToolCalls: OpenAIMessage["tool_calls"] = [];
 
+            const flushToolCalls = () => {
+                if (pendingToolCalls && pendingToolCalls.length > 0) {
+                    // 如果前一个消息是 assistant (content)，合并到一起
+                    const lastMsg = messages[messages.length - 1];
+                    if (lastMsg && lastMsg.role === "assistant" && lastMsg.content && !lastMsg.tool_calls) {
+                        lastMsg.tool_calls = pendingToolCalls;
+                    } else {
+                        messages.push({
+                            role: "assistant",
+                            content: null,
+                            tool_calls: pendingToolCalls,
+                        });
+                    }
+                    pendingToolCalls = [];
+                }
+            };
+
             for (const item of req.input) {
                 if ("type" in item && item.type === "function_call") {
                     // 收集 function_call
@@ -79,28 +96,24 @@ export class ResponsesToOpenAIConverter extends BaseConverter {
                             arguments: item.arguments,
                         },
                     });
+                } else if ("role" in item && item.role === "assistant" && pendingToolCalls.length > 0) {
+                    // 如果是 message assistant 且有 pendingToolCalls，合并到一起
+                    const content = this.extractText(item.content);
+                    messages.push({
+                        role: "assistant",
+                        content: content || null,
+                        tool_calls: pendingToolCalls,
+                    });
+                    pendingToolCalls = [];
                 } else {
-                    // 遇到非 function_call，先 flush 之前收集的 tool_calls
-                    if (pendingToolCalls && pendingToolCalls.length > 0) {
-                        messages.push({
-                            role: "assistant",
-                            content: null,
-                            tool_calls: pendingToolCalls,
-                        });
-                        pendingToolCalls = [];
-                    }
+                    // 遇到其他类型，先 flush 之前收集的 tool_calls
+                    flushToolCalls();
                     this.convertInputItem(item, messages);
                 }
             }
 
             // flush 剩余的 tool_calls
-            if (pendingToolCalls && pendingToolCalls.length > 0) {
-                messages.push({
-                    role: "assistant",
-                    content: null,
-                    tool_calls: pendingToolCalls,
-                });
-            }
+            flushToolCalls();
         }
 
         const openaiReq: OpenAIRequest = {
