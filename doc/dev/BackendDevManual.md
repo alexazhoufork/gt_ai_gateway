@@ -57,7 +57,6 @@ npm install
 ROOT_TOKEN=root-token-123
 PORT=8720
 RECORD_LOG_ENABLED=false
-STREAM_LOG_ENABLED=false
 ```
 
 ### 开发常用 Token 说明
@@ -76,8 +75,9 @@ STREAM_LOG_ENABLED=false
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
 | `RECORD_LOG_ENABLED` | `false` | 是否在 `recordService` 中输出请求记录创建/更新日志，适合本地排查 |
-| `STREAM_LOG_ENABLED` | `false` | 是否将流式响应原始 SSE 内容写入 `log/stream/<record.id>.log`，仅本地 Node 模式生效 |
 | `LOG_DIR` | `<项目根目录>/log` | 应用日志目录，支持绝对或相对路径。Docker 部署时默认为 `/app/data/log` |
+
+> 流式日志（`log/stream/<record.id>.log`）的开关已迁移到 DB 配置 `stream_log_enabled`，可在前端「高级设置」页切换，或通过 `PUT /config.json` 修改，仅在本地 Node 模式下生效。
 
 ---
 
@@ -129,7 +129,7 @@ Wrangler 会启动本地开发服务器，模拟 Cloudflare Workers 环境
    - 若设置 `RECORD_LOG_ENABLED=true`，`recordService` 会额外打印创建和更新日志，方便本地调试。
 
 2. **流式原始日志文件**
-   - 仅在上游返回 SSE 流式响应且 `STREAM_LOG_ENABLED=true` 时启用，逻辑位于 `src/service/senderService.ts`。
+   - 仅在上游返回 SSE 流式响应且 DB 配置 `stream_log_enabled=true` 时启用，逻辑位于 `src/service/senderService.ts`。
    - 服务会逐块读取上游 SSE 字节流，并将原始 chunk 追加写入本地文件：
      `log/stream/<record.id>.log`
    - 这个文件保存的是原始流内容，适合排查：

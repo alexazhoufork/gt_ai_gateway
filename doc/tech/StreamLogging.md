@@ -2,7 +2,7 @@
 
 ## 概述
 
-系统会自动将所有流式响应（SSE）的原始内容记录到文件中，用于调试和测试。
+系统会自动将所有流式响应（SSE）的原始内容记录到文件中，用于调试和测试。该功能由 DB 配置 `stream_log_enabled` 控制，默认关闭。
 
 ## 日志目录结构
 
@@ -81,29 +81,29 @@ data: [DONE]
 
 ### 1. 启用流式日志功能
 
-流式日志记录功能**默认不启用**，需要通过环境变量开启，并且仅在本地 Node 模式下可用。
+流式日志记录功能**默认不启用**，通过 DB 配置 `stream_log_enabled` 控制，仅在本地 Node 模式下可用。
 
 #### 启用方法
 
-在启动服务前设置环境变量：
+方式一（推荐）：在前端管理后台「高级设置」页面打开「流式日志记录」开关并保存。
+
+方式二：调用配置接口写入：
 
 ```bash
-# 方式一：在命令行中设置
-STREAM_LOG_ENABLED=true npm run backend:start
-
-# 方式二：在 .env 文件中设置
-echo "STREAM_LOG_ENABLED=true" >> .dev.vars
-
-# 方式三：在 package.json 脚本中设置
-"backend:start:log": "STREAM_LOG_ENABLED=true npx tsx src/local.ts"
+curl -X PUT http://localhost:8720/config.json \
+  -H "Authorization: Bearer <admin_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"stream_log_enabled":"true"}'
 ```
 
-**环境变量说明：**
-- `STREAM_LOG_ENABLED=true` - 启用流式日志记录功能
+**配置说明：**
+- `stream_log_enabled=true` —— 启用流式日志记录功能
+
+> 该配置由 `configService` 管理，运行时即可切换，无需重启服务。仅本地 Node 模式下实际写入文件；Workers / 部署模式下不会写盘。
 
 #### 检查是否启用
 
-启动服务后，查看控制台输出：
+启动服务并发送一次流式请求后，查看控制台输出：
 
 ```
 [senderService] Stream log enabled, dir: /path/to/project/log/stream
@@ -115,11 +115,10 @@ echo "STREAM_LOG_ENABLED=true" >> .dev.vars
 ### 2. 启动服务
 
 ```bash
-# 使用启用了日志功能的命令启动
-STREAM_LOG_ENABLED=true npm run backend:start
+npm run backend:start
 ```
 
-服务启动后，`log/stream/` 目录会自动创建（如果不存在）。
+服务启动后，`log/stream/` 目录会在首次写入时自动创建（如果不存在）。
 
 ### 3. 发送流式请求
 

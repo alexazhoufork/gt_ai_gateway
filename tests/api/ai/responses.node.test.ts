@@ -58,6 +58,14 @@ async function setupResponsesFixture(): Promise<ResponsesFixture> {
 }
 
 
+async function enableStreamLog(adminToken: string): Promise<void> {
+    // dbHelper.truncate() wipes the config table, so re-enable stream log before each case
+    if (config.TEST_MODE === "node" && process.env.STREAM_LOG_ENABLED === "true") {
+        await streamLogHelper.enableStreamLog(adminToken);
+    }
+}
+
+
 async function getLatestRecord(adminToken: string): Promise<any> {
     const recordsResponse = await requestHelper.get(
         "/record/latest.json?limit=1",
@@ -75,6 +83,7 @@ describeWithStreamLog("AI Responses API Node stream logs", () => {
 
     beforeEach(async () => {
         fixture = await setupResponsesFixture();
+        await enableStreamLog(fixture.adminToken);
     });
 
     it("should write non-streaming request logs", async () => {

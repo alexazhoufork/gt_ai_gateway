@@ -44,6 +44,18 @@
                             />
                         </div>
                     </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <div class="setting-title">流式日志记录</div>
+                            <div class="setting-desc">启用后，会将上游返回的原始 SSE 流式响应写入 log/stream/&lt;record_id&gt;.log，仅本地 Node 模式下生效，用于调试和生成测试样本</div>
+                        </div>
+                        <div class="setting-action">
+                            <a-switch
+                                v-model:checked="form.stream_log_enabled"
+                                :disabled="saving"
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -115,18 +127,21 @@ const originalConfig = reactive({
     cch_rewrite_enabled: false,
     responses_prompt_cache_key_enabled: false,
     claude_code_tracking_rewrite_enabled: true,
+    stream_log_enabled: false,
 });
 
 const form = reactive({
     cch_rewrite_enabled: false,
     responses_prompt_cache_key_enabled: false,
     claude_code_tracking_rewrite_enabled: true,
+    stream_log_enabled: false,
 });
 
 const isDirty = computed(() => {
     return form.cch_rewrite_enabled !== originalConfig.cch_rewrite_enabled ||
            form.responses_prompt_cache_key_enabled !== originalConfig.responses_prompt_cache_key_enabled ||
-           form.claude_code_tracking_rewrite_enabled !== originalConfig.claude_code_tracking_rewrite_enabled;
+           form.claude_code_tracking_rewrite_enabled !== originalConfig.claude_code_tracking_rewrite_enabled ||
+           form.stream_log_enabled !== originalConfig.stream_log_enabled;
 });
 
 onMounted(() => {
@@ -145,6 +160,9 @@ async function loadConfig(): Promise<void> {
         
         form.claude_code_tracking_rewrite_enabled = config.claude_code_tracking_rewrite_enabled !== "false"; // Default to true
         originalConfig.claude_code_tracking_rewrite_enabled = config.claude_code_tracking_rewrite_enabled !== "false";
+
+        form.stream_log_enabled = config.stream_log_enabled === "true";
+        originalConfig.stream_log_enabled = config.stream_log_enabled === "true";
         if (!appStore.version) {
             appStore.fetchVersion();
         }
@@ -157,6 +175,7 @@ function cancelChanges() {
     form.cch_rewrite_enabled = originalConfig.cch_rewrite_enabled;
     form.responses_prompt_cache_key_enabled = originalConfig.responses_prompt_cache_key_enabled;
     form.claude_code_tracking_rewrite_enabled = originalConfig.claude_code_tracking_rewrite_enabled;
+    form.stream_log_enabled = originalConfig.stream_log_enabled;
 }
 
 async function doCheckUpdate() {
@@ -198,11 +217,13 @@ async function saveConfig() {
             cch_rewrite_enabled: form.cch_rewrite_enabled ? "true" : "false",
             responses_prompt_cache_key_enabled: form.responses_prompt_cache_key_enabled ? "true" : "false",
             claude_code_tracking_rewrite_enabled: form.claude_code_tracking_rewrite_enabled ? "true" : "false",
+            stream_log_enabled: form.stream_log_enabled ? "true" : "false",
         });
         message.success('配置已保存');
         originalConfig.cch_rewrite_enabled = form.cch_rewrite_enabled;
         originalConfig.responses_prompt_cache_key_enabled = form.responses_prompt_cache_key_enabled;
         originalConfig.claude_code_tracking_rewrite_enabled = form.claude_code_tracking_rewrite_enabled;
+        originalConfig.stream_log_enabled = form.stream_log_enabled;
     } catch {
         // error handling is typically done by the request interceptor
     } finally {

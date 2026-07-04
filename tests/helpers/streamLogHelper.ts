@@ -1,8 +1,27 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
+import requestHelper from "./requestHelper";
+import config from "../config";
 
 const STREAM_LOG_DIR = join(process.cwd(), "log", "stream");
 const RESOURCE_DIR = join(process.cwd(), "tests", "resource", "stream_logs");
+
+
+/**
+ * Enable stream log writing by setting the DB config via the config API.
+ * dbHelper.truncate() wipes the config table and clears the server cache, so
+ * this must be called after truncate in test setup when the test class needs
+ * stream logs to be written. The server-side configService cache is updated by
+ * the API handler, so no extra cache-clear is needed. Only effective in node
+ * mode (the config value is ignored in worker mode).
+ */
+async function enableStreamLog(adminToken: string): Promise<void> {
+    await requestHelper.put(
+        "/config.json",
+        { stream_log_enabled: "true" },
+        adminToken,
+    );
+}
 
 async function waitForStreamLog(recordId: number): Promise<string> {
     const logPath = join(STREAM_LOG_DIR, `${recordId}.log`);
@@ -88,6 +107,7 @@ function normalizeStreamLog(content: string, targetFileName: string): string {
 }
 
 export default {
+    enableStreamLog,
     moveStreamLogToResource,
     readRequestLog,
     readStreamLog,

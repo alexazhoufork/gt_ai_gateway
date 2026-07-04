@@ -170,7 +170,8 @@ function buildStreamUsageAccounting(format: ApiFormat, usage: Dict | null | unde
 
 
 async function prepareStreamLog(record: SgRecord): Promise<WriteStream | null> {
-    const isStreamLogEnabled = ormService.isNode && process.env.STREAM_LOG_ENABLED === "true";
+    const isStreamLogEnabled = ormService.isNode
+        && (await configService.getConfig(ConfigKey.STREAM_LOG_ENABLED, "false")).getBoolean();
 
     if (!isStreamLogEnabled) {
         return null;
@@ -195,7 +196,8 @@ async function prepareStreamLog(record: SgRecord): Promise<WriteStream | null> {
 
 
 async function writeRequestLog(record: SgRecord, body: string): Promise<void> {
-    const isStreamLogEnabled = ormService.isNode && process.env.STREAM_LOG_ENABLED === "true";
+    const isStreamLogEnabled = ormService.isNode
+        && (await configService.getConfig(ConfigKey.STREAM_LOG_ENABLED, "false")).getBoolean();
     if (!isStreamLogEnabled) return;
 
     const logDir = join(getLogDir(), "stream");

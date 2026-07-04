@@ -30,6 +30,12 @@ describe("AI Chat API", () => {
 
         adminToken = await setupAdminUser();
 
+        // Enable stream log writing (DB config) when the env var gate is set,
+        // so the stream-log verification block below can read the log files.
+        if (config.TEST_MODE === "node" && process.env.STREAM_LOG_ENABLED === "true") {
+            await streamLogHelper.enableStreamLog(adminToken);
+        }
+
         // Create test user
         const userResponse = await requestHelper.post(
             "/user/create.json",
