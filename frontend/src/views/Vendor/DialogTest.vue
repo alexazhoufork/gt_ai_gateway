@@ -368,7 +368,11 @@ async function handleTest() {
         if (res.success) {
             notifySuccess('测试完成，连接正常');
         } else {
-            notifyWarning(`测试完成，但上游返回错误 (HTTP ${res.status})`);
+            if (res.status) {
+                notifyWarning(`测试完成，但上游返回错误 (HTTP ${res.status})`);
+            } else {
+                notifyWarning(`测试请求失败 (底层网络报错)`);
+            }
         }
     } catch (error) {
         const requestError = notifyRequestError(error, '测试请求发送失败');

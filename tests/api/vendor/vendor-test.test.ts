@@ -84,8 +84,8 @@ describe('Vendor Test API', () => {
             format: 'openai'
         }, rootToken);
 
-        // fetch will throw, our controller returns 500
-        expect(response.status).toBe(500);
+        // fetch will throw, our controller returns 200 (test result wrapper)
+        expect(response.status).toBe(200);
         expect(response.body.success).toBe(false);
         expect(response.body).toHaveProperty('error');
     });

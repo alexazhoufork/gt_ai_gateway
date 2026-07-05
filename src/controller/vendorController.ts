@@ -281,6 +281,8 @@ async function testVendor(c: Context) {
             response: responseData,
         });
     } catch (error: any) {
+        console.error(`[testVendor] Fetch failed for vendor ${vendor.name} (${vendor.id}) at ${url}:`, error);
+
         let requestBodyDisplay: unknown = upstreamBody;
         try {
             requestBodyDisplay = JSON.parse(upstreamBody);
@@ -294,14 +296,19 @@ async function testVendor(c: Context) {
             return [key, value];
         });
 
+        let errorMessage = error.message || String(error);
+        if (error.cause) {
+            errorMessage += `\nCause: ${error.cause.message || String(error.cause)}`;
+        }
+
         return c.json({
             success: false,
-            error: error.message || String(error),
+            error: errorMessage,
             url,
             request_method: "POST",
             request_headers: Object.fromEntries(headerEntries),
             request_body: requestBodyDisplay,
-        }, 500);
+        });
     }
 }
 
