@@ -16,6 +16,14 @@ compatibility_flags = [ "nodejs_compat", "no_handle_cross_request_promise_resolu
 # binding = "MY_BUCKET"
 # bucket_name = "my-bucket"
 
+# Object storage for request/response payloads (see objectStorageService).
+# Required in worker mode; in node mode payloads persist to the storage_record
+# table and this binding is unused. Create the bucket in the Cloudflare dashboard
+# and set bucket_name to match.
+[[r2_buckets]]
+binding = "OBJECT_BUCKET"
+bucket_name = "gt-ai-gateway-objects"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "gt_ai_gateway"

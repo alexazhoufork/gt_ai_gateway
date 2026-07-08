@@ -13,6 +13,11 @@ binding = "DB"
 database_name = "gt_ai_gateway_test"
 database_id = "test-database-id"
 
+# Local R2 bucket for object storage tests (worker mode).
+[[r2_buckets]]
+binding = "OBJECT_BUCKET"
+bucket_name = "gt-ai-gateway-test-objects"
+
 [observability]
 enabled = true
 head_sampling_rate = 1

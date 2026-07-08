@@ -15,6 +15,7 @@ import configController from "./controller/configController";
 import clientConfigController from "./controller/clientConfigController";
 import configService from "./service/configService";
 import ormService from "./service/ormService";
+import objectStorageService from "./service/objectStorageService";
 import authMiddleware from "./middleware/authMiddleware";
 import corsMiddleware from "./middleware/corsMiddleware";
 import customError from "./util/customError";
@@ -23,6 +24,7 @@ interface Env {
     DB: D1Database;
     ROOT_TOKEN: string;
     ASSETS?: Fetcher;
+    OBJECT_BUCKET?: R2Bucket;
 }
 
 type Variables = {
@@ -32,6 +34,10 @@ type Variables = {
 
 const dbMiddleware: MiddlewareHandler<{ Bindings: Env }> = async (c, next) => {
     await ormService.prepareDBConnection(c.env?.DB);
+    // Inject the per-request R2 bucket binding for object storage (worker mode).
+    // In node mode c.env.OBJECT_BUCKET is absent -> null -> objectStorageService
+    // falls back to the storage_record table.
+    objectStorageService.setR2Bucket(c.env?.OBJECT_BUCKET ?? null);
     await next();
 };
 

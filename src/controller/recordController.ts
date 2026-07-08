@@ -84,6 +84,8 @@ async function getRecord(c: Context) {
         return c.json({ error: "Record not found" }, 404);
     }
 
+    await recordService.attachPayload(record);
+
     return c.json(serializeRecord(record));
 }
 

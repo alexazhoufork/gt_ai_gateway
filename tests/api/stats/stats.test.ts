@@ -17,13 +17,13 @@ describe("Stats API", () => {
             adminToken = await setupAdminUser();
 
             dbHelper.execute(`
-                INSERT INTO record (user_id, model_id, request_data, response_data, status, created_at, updated_at)
+                INSERT INTO record (user_id, model_id, status, created_at, updated_at)
                 VALUES
-                (1, 101, '{}', '{}', 'success', datetime('now'), datetime('now')),
-                (2, 102, '{}', '{}', 'success', datetime('now'), datetime('now')),
-                (3, 103, '{}', '{}', 'failed',  datetime('now'), datetime('now')),
-                (4, 104, '{}', '{}', 'failed',  datetime('now', '-1 day'), datetime('now', '-1 day')),
-                (5, 105, '{}', '{}', 'success', datetime('now', '-1 day'), datetime('now', '-1 day'))
+                (1, 101, 'success', datetime('now'), datetime('now')),
+                (2, 102, 'success', datetime('now'), datetime('now')),
+                (3, 103, 'failed',  datetime('now'), datetime('now')),
+                (4, 104, 'failed',  datetime('now', '-1 day'), datetime('now', '-1 day')),
+                (5, 105, 'success', datetime('now', '-1 day'), datetime('now', '-1 day'))
             `);
 
             const response = await requestHelper.get("/stats/dashboard.json", adminToken);
@@ -41,13 +41,13 @@ describe("Stats API", () => {
             adminToken = await setupAdminUser();
 
             dbHelper.execute(`
-                INSERT INTO record (user_id, model_id, request_data, response_data, status, created_at, updated_at)
+                INSERT INTO record (user_id, model_id, status, created_at, updated_at)
                 VALUES
-                (11, 201, '{}', '{}', 'success', datetime('now'), datetime('now')),
-                (11, 201, '{}', '{}', 'failed',  datetime('now'), datetime('now')),
-                (12, 202, '{}', '{}', 'success', datetime('now'), datetime('now')),
-                (13, 203, '{}', '{}', 'success', datetime('now', '-1 day'), datetime('now', '-1 day')),
-                (14, 204, '{}', '{}', 'failed',  datetime('now', '-1 day'), datetime('now', '-1 day'))
+                (11, 201, 'success', datetime('now'), datetime('now')),
+                (11, 201, 'failed',  datetime('now'), datetime('now')),
+                (12, 202, 'success', datetime('now'), datetime('now')),
+                (13, 203, 'success', datetime('now', '-1 day'), datetime('now', '-1 day')),
+                (14, 204, 'failed',  datetime('now', '-1 day'), datetime('now', '-1 day'))
             `);
 
             const response = await requestHelper.get("/stats/dashboard.json", adminToken);
@@ -63,10 +63,10 @@ describe("Stats API", () => {
             adminToken = await setupAdminUser();
 
             dbHelper.execute(`
-                INSERT INTO record (user_id, model_id, request_data, response_data, status, created_at, updated_at)
+                INSERT INTO record (user_id, model_id, status, created_at, updated_at)
                 VALUES
-                (21, 301, '{}', '{}', 'success', datetime('now', '-2 day'), datetime('now', '-2 day')),
-                (22, 302, '{}', '{}', 'failed',  datetime('now', '-1 day'), datetime('now', '-1 day'))
+                (21, 301, 'success', datetime('now', '-2 day'), datetime('now', '-2 day')),
+                (22, 302, 'failed',  datetime('now', '-1 day'), datetime('now', '-1 day'))
             `);
 
             const response = await requestHelper.get("/stats/dashboard.json", adminToken);
