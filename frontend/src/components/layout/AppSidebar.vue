@@ -12,15 +12,15 @@
                     <span>仪表盘</span>
                 </a-menu-item>
                 <a-menu-item key="/user">
-                    <UserOutlined />
+                    <TeamOutlined />
                     <span>用户管理</span>
                 </a-menu-item>
                 <a-menu-item key="/vendor">
-                    <CloudOutlined />
+                    <CloudUploadOutlined />
                     <span>供应商管理</span>
                 </a-menu-item>
                 <a-menu-item key="/model">
-                    <SettingOutlined />
+                    <TagOutlined />
                     <span>模型管理</span>
                 </a-menu-item>
                 <a-menu-item key="/record">
@@ -36,7 +36,7 @@
                     <span>API 测试</span>
                 </a-menu-item>
                 <a-menu-item key="/integration">
-                    <LinkOutlined />
+                    <ApiOutlined />
                     <span>接入配置</span>
                 </a-menu-item>
                 <a-menu-item key="/client-manager">
@@ -44,7 +44,7 @@
                     <span>客户端管理</span>
                 </a-menu-item>
                 <a-menu-item key="/advanced-settings">
-                    <ControlOutlined />
+                    <SettingOutlined />
                     <span>高级设置</span>
                 </a-menu-item>
                 <a-menu-item v-if="appStore.isDeveloperMode" key="/developer">
@@ -87,7 +87,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { DashboardOutlined, UserOutlined, CloudOutlined, SettingOutlined, FileTextOutlined, ExperimentOutlined, MenuFoldOutlined, MenuUnfoldOutlined, LinkOutlined, DollarOutlined, ControlOutlined, CodeOutlined, RobotOutlined } from '@ant-design/icons-vue';
+import { DashboardOutlined, TeamOutlined, CloudUploadOutlined, TagOutlined, FileTextOutlined, ExperimentOutlined, MenuFoldOutlined, MenuUnfoldOutlined, ApiOutlined, DollarOutlined, CodeOutlined, RobotOutlined, SettingOutlined } from '@ant-design/icons-vue';
 import { useAppStore } from '@/stores/app';
 import { checkUpdate } from '@/api/system';
 import { getConfig } from '@/api/config';
@@ -171,6 +171,10 @@ function toggleSidebar() {
 
 .app-sidebar.collapsed {
     width: 88px;
+}
+
+.app-sidebar.collapsed .sidebar-footer {
+    justify-content: center;
 }
 
 .sidebar-content {

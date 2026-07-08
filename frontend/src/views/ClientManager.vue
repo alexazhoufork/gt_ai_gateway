@@ -25,11 +25,8 @@
             <a-tabs v-if="available" v-model:activeKey="activeClient" class="client-tabs">
                 <a-tab-pane v-for="client in clients" :key="client.client">
                     <template #tab>
-                        <div class="tab-title">
-                            <span>{{ client.displayName }}</span>
-                            <a-badge
-                                :status="client.configured ? 'processing' : client.installed ? 'success' : 'default'"
-                            />
+                        <div class="tab-title" :class="{ 'tab-uninstalled': !client.installed }">
+                            {{ client.displayName }}
                         </div>
                     </template>
 
@@ -687,6 +684,11 @@ function addBackup(backup: ClientConfigBackupInfo): void {
     display: flex;
     align-items: center;
     gap: 8px;
+    color: var(--text-primary, #1a1a1a);
+}
+
+.tab-uninstalled {
+    color: var(--text-secondary, #999);
 }
 
 .client-card {
