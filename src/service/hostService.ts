@@ -1,4 +1,5 @@
-import configService, { ConfigKey } from "./configService";
+import configService from "./configService";
+import { ConfigKey } from "../constants";
 
 const HOST_KEY_LENGTH = 8;
 

@@ -1,8 +1,8 @@
-import configService, { ConfigKey } from "./configService";
+import configService from "./configService";
 import { rewriteCchInSystemPrompt } from "../plugin/cchRewriter";
 import { injectResponsesPromptCacheKey } from "../plugin/responsesPromptCacheKeyRewriter";
 import { removeClaudeCodeTrackingMarker } from "../plugin/claudeCodeTrackingRewriter";
-import { ApiFormat } from "../constants";
+import { ApiFormat, ConfigKey } from "../constants";
 
 class PluginService {
     public async applyRequestPlugins(

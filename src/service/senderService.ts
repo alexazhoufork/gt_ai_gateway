@@ -7,7 +7,7 @@ import { SgVendor } from "../model/sgVendor";
 import { SgVendorModel } from "../model/sgVendorModel";
 import recordService from "./recordService";
 import ormService from "./ormService";
-import { SgRecordStatus, FailedCode, ApiFormat } from "../constants";
+import { SgRecordStatus, FailedCode, ApiFormat, ConfigKey } from "../constants";
 import sseAccumulator from "../util/sseAccumulator";
 import responsesAccumulator from "../util/responsesAccumulator";
 import { SgRecord, SgRecordUsage } from "../model/sgRecord";
@@ -22,7 +22,7 @@ import pluginService from "./pluginService";
 import type { BaseConverter } from "../util/protocolConverter/BaseConverter";
 import type { ProtocolStreamEvent } from "../util/protocolConverter/protocolTypes";
 import sseEvent from "../util/sseEvent";
-import configService, { ConfigKey } from "./configService";
+import configService from "./configService";
 import hostService from "./hostService";
 import { runInBackground } from "../util/runInBackground";
 

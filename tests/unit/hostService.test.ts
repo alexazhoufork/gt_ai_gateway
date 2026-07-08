@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ConfigKey, ConfigItem } from "../../src/service/configService";
+import { ConfigKey } from "../../src/constants";
+import { ConfigItem } from "../../src/service/configService";
 
 const configMocks = vi.hoisted(() => ({
     getConfig: vi.fn(),

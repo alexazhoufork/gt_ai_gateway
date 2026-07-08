@@ -1,7 +1,7 @@
 import { SgRecord, RECORD_SUMMARY_COLUMNS } from "../model/sgRecord";
-import { SgRecordStatus, ApiFormat } from "../constants";
+import { SgRecordStatus, ApiFormat, ConfigKey } from "../constants";
 import objectStorageService from "./objectStorageService";
-import configService, { ConfigKey } from "./configService";
+import configService from "./configService";
 
 interface RecordPayload {
     request: string | null;

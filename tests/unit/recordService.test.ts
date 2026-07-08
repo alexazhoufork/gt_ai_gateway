@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import recordService from "../../src/service/recordService";
 import { SgRecord } from "../../src/model/sgRecord";
-import { ConfigKey } from "../../src/service/configService";
+import { ConfigKey } from "../../src/constants";
 
 
 const objectStorageMocks = vi.hoisted(() => ({
@@ -23,19 +23,14 @@ const configMocks = vi.hoisted(() => ({
     clearCache: vi.fn(),
 }));
 
-vi.mock("../../src/service/configService", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("../../src/service/configService")>();
-    return {
-        ConfigKey: actual.ConfigKey,
-        ConfigItem: actual.ConfigItem,
-        default: {
-            getConfig: configMocks.getConfig,
-            setValue: configMocks.setValue,
-            getAll: configMocks.getAll,
-            clearCache: configMocks.clearCache,
-        },
-    };
-});
+vi.mock("../../src/service/configService", () => ({
+    default: {
+        getConfig: configMocks.getConfig,
+        setValue: configMocks.setValue,
+        getAll: configMocks.getAll,
+        clearCache: configMocks.clearCache,
+    },
+}));
 
 
 describe("recordService", () => {

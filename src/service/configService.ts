@@ -1,15 +1,5 @@
 import { SgConfig } from "../model/sgConfig";
-
-export enum ConfigKey {
-    CCH_REWRITE_ENABLED = "cch_rewrite_enabled",
-    RESPONSES_PROMPT_CACHE_KEY_ENABLED = "responses_prompt_cache_key_enabled",
-    CLAUDE_CODE_TRACKING_REWRITE_ENABLED = "claudecode_tracking_rewrite_enabled",
-    HOST_KEY = "host_key",
-    STREAM_LOG_ENABLED = "stream_log_enabled",
-    AUTO_UPDATE_ENABLED = "auto_update_enabled",
-    TELEMETRY_DISABLED = "telemetry_disabled",
-    RECORD_PAYLOAD_ENABLED = "record_payload_enabled",
-}
+import { ConfigKey } from "../constants";
 
 // 各配置项的默认值集中在此维护，调用方无需再传默认值。
 // 未在表中登记的 key 默认值为空字符串。

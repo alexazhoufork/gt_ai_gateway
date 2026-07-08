@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+#
+# Pre-commit hook: verify that version numbers are consistent across
+# package.json, frontend/package.json, tauri/src-tauri/Cargo.toml, and
+# tauri/src-tauri/tauri.conf.json.
+#
+# Installed automatically by `npm install` via the "prepare" script.
+
+set -euo pipefail
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+get_root_version()     { grep -m1 '"version"' "$ROOT/package.json"             | sed 's/.*"\([0-9][0-9.]*[^"]*\)".*/\1/'; }
+get_frontend_version() { grep -m1 '"version"' "$ROOT/frontend/package.json"    | sed 's/.*"\([0-9][0-9.]*[^"]*\)".*/\1/'; }
+get_cargo_version()    { grep '^version' "$ROOT/tauri/src-tauri/Cargo.toml"    | head -1 | sed 's/.*"\([0-9][0-9.]*[^"]*\)".*/\1/'; }
+get_tauri_version()    { grep '"version"' "$ROOT/tauri/src-tauri/tauri.conf.json" | head -1 | sed 's/.*"\([0-9][0-9.]*[^"]*\)".*/\1/'; }
+
+ROOT_VER=$(get_root_version)
+FE_VER=$(get_frontend_version)
+CARGO_VER=$(get_cargo_version)
+TAURI_VER=$(get_tauri_version)
+
+mismatch=0
+
+check() {
+    local label="$1" val="$2"
+    if [ "$val" != "$ROOT_VER" ]; then
+        echo -e "${RED}✗${NC} $label: ${RED}$val${NC} (expected $ROOT_VER)"
+        mismatch=1
+    else
+        echo -e "${GREEN}✓${NC} $label: $val"
+    fi
+}
+
+echo "Checking version consistency..."
+check "package.json"              "$ROOT_VER"
+check "frontend/package.json"    "$FE_VER"
+check "Cargo.toml"               "$CARGO_VER"
+check "tauri.conf.json"          "$TAURI_VER"
+
+if [ "$mismatch" -ne 0 ]; then
+    echo ""
+    echo -e "${RED}Version mismatch detected! Commit blocked.${NC}"
+    echo "Run: bash script/sync_version.sh <version>  to fix all files at once."
+    exit 1
+fi
+
+echo ""
+echo -e "${GREEN}All versions consistent: $ROOT_VER${NC}"

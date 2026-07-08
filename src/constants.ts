@@ -63,3 +63,14 @@ export enum UserStatus {
 }
 
 export const ROOT_USER_ID = -1;
+
+export enum ConfigKey {
+    CCH_REWRITE_ENABLED = "cch_rewrite_enabled",
+    RESPONSES_PROMPT_CACHE_KEY_ENABLED = "responses_prompt_cache_key_enabled",
+    CLAUDE_CODE_TRACKING_REWRITE_ENABLED = "claudecode_tracking_rewrite_enabled",
+    HOST_KEY = "host_key",
+    STREAM_LOG_ENABLED = "stream_log_enabled",
+    AUTO_UPDATE_ENABLED = "auto_update_enabled",
+    TELEMETRY_DISABLED = "telemetry_disabled",
+    RECORD_PAYLOAD_ENABLED = "record_payload_enabled",
+}
