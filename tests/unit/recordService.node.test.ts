@@ -1,8 +1,9 @@
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { SgRecord } from "../../src/model/sgRecord";
 import recordService from "../../src/service/recordService";
 import objectStorageService from "../../src/service/objectStorageService";
-import { SgRecordStatus } from "../../src/constants";
+import { SgRecordStatus, ConfigKey } from "../../src/constants";
+import configService from "../../src/service/configService";
 import dbHelper from "../helpers/dbHelper";
 import ormTestHelper from "../helpers/ormTestHelper";
 
@@ -14,6 +15,8 @@ describe("recordService (node, real db)", () => {
 
     beforeEach(async () => {
         await dbHelper.truncate();
+        // Reset config to defaults
+        await configService.setValue(ConfigKey.RECORD_PAYLOAD_ENABLED, "true");
     });
 
     async function getStoredPayload(recordId: number) {
@@ -123,5 +126,60 @@ describe("recordService (node, real db)", () => {
         const second = byId.get(Number(r2.id));
         expect(second.request_data).toBe('{"q":2}');
         expect(second.response_data).toBe('{"a":2}');
+    });
+
+    it("should not log when RECORD_LOG_ENABLED is false", async () => {
+        process.env.RECORD_LOG_ENABLED = "false";
+        const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+        await recordService.create(1, 1, "test request");
+        expect(spy).not.toHaveBeenCalled();
+
+        await recordService.update(1, { status: "success" as any });
+        expect(spy).not.toHaveBeenCalled();
+
+        spy.mockRestore();
+        delete process.env.RECORD_LOG_ENABLED;
+    });
+
+    it("should log when RECORD_LOG_ENABLED is true", async () => {
+        process.env.RECORD_LOG_ENABLED = "true";
+        const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+        await recordService.create(1, 1, "test request");
+        expect(spy).toHaveBeenCalledWith(expect.stringContaining("[RecordService] Creating record: user=1, model=1"));
+        expect(spy).toHaveBeenCalledWith(expect.stringContaining("test request"));
+
+        await recordService.update(1, { status: "success" as any });
+        expect(spy).toHaveBeenCalledWith(
+            expect.stringContaining("[RecordService] Updating record 1:"),
+            expect.any(String),
+        );
+
+        spy.mockRestore();
+        delete process.env.RECORD_LOG_ENABLED;
+    });
+
+    it("skips storage write on create when payload recording is disabled", async () => {
+        await configService.setValue(ConfigKey.RECORD_PAYLOAD_ENABLED, "false");
+
+        const record = await recordService.create(1, 1, "test request");
+
+        const payload = await getStoredPayload(Number(record.id));
+        expect(payload).toBeNull();
+    });
+
+    it("skips storage write on update with response_data when payload recording is disabled", async () => {
+        const record = await recordService.create(1, 1, '{"q":1}');
+        await configService.setValue(ConfigKey.RECORD_PAYLOAD_ENABLED, "false");
+
+        await recordService.update(Number(record.id), {
+            response_data: "resp body",
+            status: SgRecordStatus.SUCCESS,
+        });
+
+        // payload unchanged — response not written
+        const payload = await getStoredPayload(Number(record.id));
+        expect(payload).toEqual({ request: '{"q":1}', response: null });
     });
 });
