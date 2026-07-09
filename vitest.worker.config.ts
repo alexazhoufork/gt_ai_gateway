@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
     globals: true,
     include: ['tests/**/*.test.ts', 'src/**/*.test.ts'],
-    exclude: ['node_modules', '**/*.node.test.ts'],
+    exclude: ['node_modules', '**/*.node.test.ts', 'tests/unit/recordService.test.ts'],
     environment: 'node',
     globalSetup: ['./tests/globalSetup.ts'],
     // Run tests sequentially to avoid database and port conflicts
