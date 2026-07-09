@@ -4,7 +4,7 @@ const fs = require("fs");
 
 const WRANGLER_CONFIG_PATH = "wrangler.toml";
 const DEFAULT_DATABASE_NAME = "gt_ai_gateway";
-const DEFAULT_R2_BUCKET_NAME = "gt_ai_gateway_objects";
+const DEFAULT_R2_BUCKET_NAME = "gt-ai-gateway-objects";
 const DEFAULT_KV_NAMESPACE_NAME = "gt_ai_gateway_cache";
 const DEFAULT_D1_BINDING = "DB";
 const DEPLOY_SETUP_FLAGS = new Set(["--auto-create-db", "--auto-migrate", "--auto-create-root-token", "--auto-create-r2"]);

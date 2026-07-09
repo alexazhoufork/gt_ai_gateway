@@ -72,7 +72,7 @@
 
 默认情况下，部署脚本会按以下固定名称自动查找或创建资源：
 - D1 数据库：`gt_ai_gateway`
-- R2 对象存储桶：`gt_ai_gateway_objects`
+- R2 对象存储桶：`gt-ai-gateway-objects`
 - KV 命名空间：`gt_ai_gateway_cache`
 
 如果需要使用自定义名称（例如避免与其他项目冲突），可以在 GitHub Secrets 中添加以下变量来覆盖：
@@ -80,7 +80,7 @@
 | Secret 名称 | 说明 | 默认值 |
 | :--- | :--- | :--- |
 | `CLOUDFLARE_D1_NAME` | D1 数据库名称 | `gt_ai_gateway` |
-| `CLOUDFLARE_R2_NAME` | R2 对象存储桶名称 | `gt_ai_gateway_objects` |
+| `CLOUDFLARE_R2_NAME` | R2 对象存储桶名称 | `gt-ai-gateway-objects` |
 | `CLOUDFLARE_KV_NAME` | KV 命名空间名称 | `gt_ai_gateway_cache` |
 
 添加方法与 `ROOT_TOKEN` 相同：进入 GitHub 仓库 `Settings` -> `Secrets and variables` -> `Actions`，点击 `New repository secret` 添加即可。

@@ -51,13 +51,13 @@ database_id = "这里填入你刚刚生成的 database_id"
 ```toml
 [[r2_buckets]]
 binding = "OBJECT_BUCKET"
-bucket_name = "gt_ai_gateway_objects"
+bucket_name = "gt-ai-gateway-objects"
 ```
 
 创建对应的 R2 桶（名称需与 `bucket_name` 一致）：
 
 ```bash
-npx wrangler r2 bucket create gt_ai_gateway_objects
+npx wrangler r2 bucket create gt-ai-gateway-objects
 ```
 
 > 若想改用已有的 R2 桶，把 `bucket_name` 改成你的桶名即可，无需重新创建。也可以通过环境变量 `CLOUDFLARE_R2_NAME` 在自动部署时覆盖。
