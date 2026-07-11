@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { SgVendor } from "../../src/model/sgVendor";
-import { ApiFormat, VendorType } from "../../src/constants";
+import { SgVendor, SgVendorConfig } from "../../src/model/sgVendor";
+import { ApiFormat, VendorType, VendorAuthMode } from "../../src/constants";
 
 /**
  * SgVendor URL resolution and merge tests
@@ -263,6 +263,37 @@ describe("SgVendor.getUrlByFormat — URL merge & resolution", () => {
         it("returns empty array when no URLs exist", () => {
             const v = makeVendor("other");
             expect(v.getSupportedFormats()).toEqual([]);
+        });
+    });
+
+    describe("config (SgVendorConfig cast)", () => {
+        // Sutando .d.ts 声明 static get/set 无参导致类型签名不匹配，测试时通过 any 绕过
+        const Cast = SgVendorConfig as any;
+
+        it("defaults auth_mode to bearer_token and skip_tls_verify to false from empty JSON", () => {
+            const config: SgVendorConfig = Cast.get(null, "config", "");
+            expect(config.auth_mode).toBe(VendorAuthMode.BEARER_TOKEN);
+            expect(config.skip_tls_verify).toBe(false);
+            expect(config.toJSON()).toEqual({ auth_mode: VendorAuthMode.BEARER_TOKEN, skip_tls_verify: false });
+        });
+
+        it("parses skip_tls_verify from stored JSON", () => {
+            const config: SgVendorConfig = Cast.get(null, "config", JSON.stringify({ skip_tls_verify: true }));
+            expect(config.skip_tls_verify).toBe(true);
+            expect(config.auth_mode).toBe(VendorAuthMode.BEARER_TOKEN);
+        });
+
+        it("set serializes instance as JSON string", () => {
+            const config = new SgVendorConfig({ auth_mode: VendorAuthMode.API_KEY, skip_tls_verify: true });
+            const json: string = Cast.set(null, "config", config);
+            const parsed = JSON.parse(json);
+            expect(parsed).toEqual({ auth_mode: VendorAuthMode.API_KEY, skip_tls_verify: true });
+        });
+
+        it("set serializes plain object as JSON string", () => {
+            const json: string = Cast.set(null, "config", { auth_mode: VendorAuthMode.BEARER_TOKEN });
+            const parsed = JSON.parse(json);
+            expect(parsed).toEqual({ auth_mode: VendorAuthMode.BEARER_TOKEN });
         });
     });
 });
