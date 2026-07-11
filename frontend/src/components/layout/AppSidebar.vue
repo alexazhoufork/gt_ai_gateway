@@ -27,13 +27,13 @@
                     <FileTextOutlined />
                     <span>请求记录</span>
                 </a-menu-item>
-                <a-menu-item key="/balance">
+                <a-menu-item v-if="appStore.moduleBillingEnabled" key="/balance">
                     <DollarOutlined />
                     <span>余额管理</span>
                 </a-menu-item>
-                <a-menu-item key="/api-test">
+                <a-menu-item v-if="appStore.moduleApiPlaygroundEnabled" key="/api-test">
                     <ExperimentOutlined />
-                    <span>API 测试</span>
+                    <span>API 体验</span>
                 </a-menu-item>
                 <a-menu-item key="/integration">
                     <ApiOutlined />
@@ -118,10 +118,8 @@ const selectedKeys = computed(() => {
 });
 
 onMounted(() => {
-    if (!appStore.version) {
-        appStore.fetchVersion();
-    }
-    
+    appStore.fetchVersion();
+
     // Check for updates if auto-update is enabled
     getConfig().then(config => {
         // Handle PostHog telemetry opt-in/opt-out based on backend config
