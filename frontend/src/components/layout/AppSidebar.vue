@@ -118,7 +118,7 @@ const selectedKeys = computed(() => {
 });
 
 onMounted(() => {
-    appStore.fetchVersion();
+    appStore.fetchStatus();
 
     // Check for updates if auto-update is enabled
     getConfig().then(config => {

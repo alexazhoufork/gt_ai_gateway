@@ -9,9 +9,12 @@ const FALLBACK_VERSION = packageJson.version;
 export const useAppStore = defineStore('app', () => {
     const sidebarCollapsed = ref(false);
     const version = ref(FALLBACK_VERSION);
-    // 运行模式（来自 /status.json 的 mode 字段），未加载前为空字符串
     const mode = ref<RunMode | ''>('');
     const isDeveloperMode = ref(localStorage.getItem('developerMode') === 'true');
+
+    // 功能模块开关
+    const moduleBillingEnabled = ref(false);
+    const moduleApiPlaygroundEnabled = ref(false);
 
     function toggleSidebar() {
         sidebarCollapsed.value = !sidebarCollapsed.value;
@@ -27,11 +30,13 @@ export const useAppStore = defineStore('app', () => {
         localStorage.removeItem('developerMode');
     }
 
-    async function fetchVersion() {
+    async function fetchStatus() {
         try {
             const data = await status();
             version.value = data.system?.version || FALLBACK_VERSION;
             mode.value = data.mode || '';
+            moduleBillingEnabled.value = data.modules?.billing ?? false;
+            moduleApiPlaygroundEnabled.value = data.modules?.api_playground ?? false;
         } catch (error) {
             console.error('Failed to fetch version:', error);
         }
@@ -42,9 +47,11 @@ export const useAppStore = defineStore('app', () => {
         version,
         mode,
         isDeveloperMode,
+        moduleBillingEnabled,
+        moduleApiPlaygroundEnabled,
         toggleSidebar,
         enableDeveloperMode,
         disableDeveloperMode,
-        fetchVersion,
+        fetchStatus,
     };
 });

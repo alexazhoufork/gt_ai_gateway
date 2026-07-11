@@ -6,6 +6,38 @@
 
         <a-spin :spinning="loading">
             <a-tabs v-model:activeKey="activeTab">
+                <!-- 功能模块 -->
+                <a-tab-pane key="modules" tab="功能模块">
+                    <div class="settings-list">
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <div class="setting-title">模型计费</div>
+                                <div class="setting-desc">启用后，可在模型管理中设置计费价格，并使用余额管理功能对用户进行计费</div>
+                            </div>
+                            <div class="setting-action">
+                                <a-switch
+                                    :checked="form.module_billing_enabled"
+                                    @change="form.module_billing_enabled = $event as boolean"
+                                    :disabled="saving"
+                                />
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <div class="setting-title">API 体验</div>
+                                <div class="setting-desc">启用后，侧边栏将显示 API 体验入口，可在线调试和测试接口</div>
+                            </div>
+                            <div class="setting-action">
+                                <a-switch
+                                    :checked="form.module_api_playground_enabled"
+                                    @change="form.module_api_playground_enabled = $event as boolean"
+                                    :disabled="saving"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </a-tab-pane>
+
                 <!-- 请求处理 -->
                 <a-tab-pane key="request" tab="请求处理">
                     <div class="settings-list">
@@ -206,7 +238,7 @@ const latestVersion = ref('');
 
 const loading = ref(false);
 const saving = ref(false);
-const activeTab = ref('request');
+const activeTab = ref('modules');
 
 const deleteModalVisible = ref(false);
 const deleteMode = ref<'payload' | 'all'>('payload');
@@ -220,6 +252,8 @@ const originalConfig = reactive({
     record_payload_enabled: true,
     auto_update_enabled: true,
     telemetry_disabled: false,
+    module_billing_enabled: false,
+    module_api_playground_enabled: false,
 });
 
 const form = reactive({
@@ -230,6 +264,8 @@ const form = reactive({
     record_payload_enabled: true,
     auto_update_enabled: true,
     telemetry_disabled: false,
+    module_billing_enabled: false,
+    module_api_playground_enabled: false,
 });
 
 const isDirty = computed(() => {
@@ -239,7 +275,9 @@ const isDirty = computed(() => {
            form.stream_log_enabled !== originalConfig.stream_log_enabled ||
            form.record_payload_enabled !== originalConfig.record_payload_enabled ||
            form.auto_update_enabled !== originalConfig.auto_update_enabled ||
-           form.telemetry_disabled !== originalConfig.telemetry_disabled;
+           form.telemetry_disabled !== originalConfig.telemetry_disabled ||
+           form.module_billing_enabled !== originalConfig.module_billing_enabled ||
+           form.module_api_playground_enabled !== originalConfig.module_api_playground_enabled;
 });
 
 onMounted(() => {
@@ -270,7 +308,13 @@ async function loadConfig(): Promise<void> {
 
         form.telemetry_disabled = config.telemetry_disabled === "true";
         originalConfig.telemetry_disabled = config.telemetry_disabled === "true";
-        await appStore.fetchVersion();
+
+        form.module_billing_enabled = config.module_billing_enabled === "true";
+        originalConfig.module_billing_enabled = config.module_billing_enabled === "true";
+
+        form.module_api_playground_enabled = config.module_api_playground_enabled === "true";
+        originalConfig.module_api_playground_enabled = config.module_api_playground_enabled === "true";
+        await appStore.fetchStatus();
     } finally {
         loading.value = false;
     }
@@ -284,6 +328,8 @@ function cancelChanges() {
     form.record_payload_enabled = originalConfig.record_payload_enabled;
     form.auto_update_enabled = originalConfig.auto_update_enabled;
     form.telemetry_disabled = originalConfig.telemetry_disabled;
+    form.module_billing_enabled = originalConfig.module_billing_enabled;
+    form.module_api_playground_enabled = originalConfig.module_api_playground_enabled;
 }
 
 async function doCheckUpdate() {
@@ -352,6 +398,8 @@ async function saveConfig() {
             record_payload_enabled: form.record_payload_enabled ? "true" : "false",
             auto_update_enabled: form.auto_update_enabled ? "true" : "false",
             telemetry_disabled: form.telemetry_disabled ? "true" : "false",
+            module_billing_enabled: form.module_billing_enabled ? "true" : "false",
+            module_api_playground_enabled: form.module_api_playground_enabled ? "true" : "false",
         });
         message.success('配置已保存');
         originalConfig.cch_rewrite_enabled = form.cch_rewrite_enabled;
@@ -361,6 +409,12 @@ async function saveConfig() {
         originalConfig.record_payload_enabled = form.record_payload_enabled;
         originalConfig.auto_update_enabled = form.auto_update_enabled;
         originalConfig.telemetry_disabled = form.telemetry_disabled;
+        originalConfig.module_billing_enabled = form.module_billing_enabled;
+        originalConfig.module_api_playground_enabled = form.module_api_playground_enabled;
+
+        // 同步全局状态
+        appStore.moduleBillingEnabled = form.module_billing_enabled;
+        appStore.moduleApiPlaygroundEnabled = form.module_api_playground_enabled;
 
         if ((window as any).posthog) {
             if (form.telemetry_disabled) {
