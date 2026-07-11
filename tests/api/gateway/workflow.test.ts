@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import requestHelper from "../helpers/requestHelper";
-import mockHelper from "../helpers/mockHelper";
-import vendorFixtures from "../fixtures/vendorFixtures";
-import modelFixtures from "../fixtures/modelFixtures";
-import dbHelper from "../helpers/dbHelper"
-import { setupAdminUser } from "../globalSetup";
+import requestHelper from "../../helpers/requestHelper";
+import mockHelper from "../../helpers/mockHelper";
+import vendorFixtures from "../../fixtures/vendorFixtures";
+import modelFixtures from "../../fixtures/modelFixtures";
+import dbHelper from "../../helpers/dbHelper"
+import { setupAdminUser } from "../../globalSetup";
 
 /**
  * Integration Tests - Complete Workflows

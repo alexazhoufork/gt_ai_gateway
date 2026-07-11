@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import requestHelper from "../helpers/requestHelper";
+import requestHelper from "../../helpers/requestHelper";
 import { readFileSync, readdirSync } from "fs";
 import { join } from "path";
 

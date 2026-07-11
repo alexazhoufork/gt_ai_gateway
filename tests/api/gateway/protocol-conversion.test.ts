@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import requestHelper from "../helpers/requestHelper";
-import mockHelper from "../helpers/mockHelper";
-import modelFixtures from "../fixtures/modelFixtures";
-import dbHelper from "../helpers/dbHelper";
-import { setupAdminUser } from "../globalSetup";
-import config from "../config";
+import requestHelper from "../../helpers/requestHelper";
+import mockHelper from "../../helpers/mockHelper";
+import modelFixtures from "../../fixtures/modelFixtures";
+import dbHelper from "../../helpers/dbHelper";
+import { setupAdminUser } from "../../globalSetup";
+import config from "../../config";
 
 /**
  * Protocol conversion integration tests

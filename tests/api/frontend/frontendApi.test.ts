@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import requestHelper from "../helpers/requestHelper";
-import dbHelper from "../helpers/dbHelper";
-import { setupAdminUser } from "../globalSetup";
+import requestHelper from "../../helpers/requestHelper";
+import dbHelper from "../../helpers/dbHelper";
+import { setupAdminUser } from "../../globalSetup";
 
 /**
  * Frontend-Backend API Coexistence Tests

@@ -8,7 +8,7 @@ const configMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("../../../src/service/configService", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("../../src/service/configService")>();
+    const actual = await importOriginal<typeof import("../../../src/service/configService")>();
     return {
         ...actual,
         default: {
@@ -19,7 +19,7 @@ vi.mock("../../../src/service/configService", async (importOriginal) => {
 });
 
 async function loadService() {
-    return await import("../../src/service/hostService");
+    return await import("../../../src/service/hostService");
 }
 
 

@@ -235,34 +235,44 @@ export async function migrate(adapter: DBAdapter, env: string) {
             return;
         }
 
-        for (const file of pendingMigrations) {
-            console.log(`\nApplying migration: ${file}...`);
-            const sqlPath = join(MIGRATION_DIR, file);
-            const sql = readFileSync(sqlPath, "utf-8");
+        // Worker mode: 合并所有 pending migrations 为一个文件，一次执行
+        if (!adapter.execTransaction) {
+            mkdirSync(TMP_DIR, { recursive: true });
+            const tmpFile = join(TMP_DIR, `migration_${crypto.randomUUID()}.sql`);
 
-            const insertRecord = `INSERT INTO _migrations (name) VALUES ('${file}')`;
+            let combinedSql = "";
+            for (const file of pendingMigrations) {
+                console.log(`\nApplying migration: ${file}...`);
+                const sqlPath = join(MIGRATION_DIR, file);
+                const sql = readFileSync(sqlPath, "utf-8");
+                combinedSql += `${sql}\n`;
+                combinedSql += `INSERT INTO _migrations (name) VALUES ('${file}');\n`;
+            }
 
-            try {
-                if (!adapter.execTransaction) {
-                    // 把 migration SQL 和记录插入合并到一个临时文件，一次提交
-                    mkdirSync(TMP_DIR, { recursive: true });
-                    const tmpFile = join(TMP_DIR, `migration_${crypto.randomUUID()}.sql`);
-                    writeFileSync(tmpFile, `${sql}\n${insertRecord};`, "utf-8");
-                    let cmd = `npx wrangler d1 execute ${dbName} ${env === "worker-cloud" ? "--remote" : "--local"}`;
-                    if (dbConfigPath) {
-                        cmd += ` --config ${dbConfigPath}`;
-                    }
-                    cmd += ` --file="${tmpFile}"`;
-                    console.log(`> ${cmd}`);
-                    execSync(cmd, { stdio: "inherit" });
-                } else {
-                    // 用事务把 migration SQL 和记录插入打包执行
+            writeFileSync(tmpFile, combinedSql, "utf-8");
+            let cmd = `npx wrangler d1 execute ${dbName} ${env === "worker-cloud" ? "--remote" : "--local"}`;
+            if (dbConfigPath) {
+                cmd += ` --config ${dbConfigPath}`;
+            }
+            cmd += ` --file="${tmpFile}"`;
+            console.log(`> ${cmd}`);
+            execSync(cmd, { stdio: "inherit" });
+            console.log(`✅ Successfully applied ${pendingMigrations.length} migrations`);
+        } else {
+            // Node mode: 用事务逐个执行
+            for (const file of pendingMigrations) {
+                console.log(`\nApplying migration: ${file}...`);
+                const sqlPath = join(MIGRATION_DIR, file);
+                const sql = readFileSync(sqlPath, "utf-8");
+                const insertRecord = `INSERT INTO _migrations (name) VALUES ('${file}')`;
+
+                try {
                     adapter.execTransaction!([sql, insertRecord]);
+                    console.log(`✅ Successfully applied: ${file}`);
+                } catch (e) {
+                    console.error(`❌ Failed to apply migration ${file}:`, e);
+                    throw e;
                 }
-                console.log(`✅ Successfully applied: ${file}`);
-            } catch (e) {
-                console.error(`❌ Failed to apply migration ${file}:`, e);
-                throw e;
             }
         }
 
